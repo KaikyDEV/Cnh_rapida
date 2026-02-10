@@ -1,0 +1,41 @@
+﻿@model List<Cnh_rapida.Models.AulaPratica>
+
+<h2>Minhas Aulas Práticas</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Você ainda não solicitou nenhuma aula prática.
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Horas</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var aula in Model)
+            {
+                <tr>
+                    <td>@aula.Data.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@aula.QuantidadeHoras</td>
+                    <td>
+                        @if (aula.Aprovada)
+                        {
+                            <span class="badge bg-success">Confirmada</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Aguardando aprovação</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

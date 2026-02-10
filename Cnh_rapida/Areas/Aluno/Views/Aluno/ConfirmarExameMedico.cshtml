@@ -1,0 +1,49 @@
+﻿@{
+
+    ViewData["Title"] = "Envio de Exames";
+
+}
+
+
+
+<h3 class="mb-4">📤 Enviar Exames</h3>
+
+
+
+<form asp-action="ConfirmarExameMedico" method="post" enctype="multipart/form-data">
+
+
+
+    @Html.AntiForgeryToken()
+
+
+
+    <div class="mb-3">
+
+        <label class="form-label">Exame Médico (PDF ou imagem)</label>
+
+        <input type="file" name="exameMedico" class="form-control" required />
+
+    </div>
+
+
+
+    <div class="mb-3">
+
+        <label class="form-label">Psicotécnico (PDF ou imagem)</label>
+
+        <input type="file" name="psicotecnico" class="form-control" required />
+
+    </div>
+
+
+
+    <button type="submit" class="btn btn-success">
+
+        Enviar Exames
+
+    </button>
+
+
+
+</form>

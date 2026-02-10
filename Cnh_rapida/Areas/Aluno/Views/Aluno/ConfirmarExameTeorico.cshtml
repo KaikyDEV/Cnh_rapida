@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Enviar comprovante - Exame Teórico";
+}
+
+<h2 class="mb-4">📤 Enviar comprovante do Exame Teórico</h2>
+
+@if (TempData["Erro"] != null)
+{
+    <div class="alert alert-danger">@TempData["Erro"]</div>
+}
+
+<form asp-action="ConfirmarExameTeorico"
+      method="post"
+      enctype="multipart/form-data">
+
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">Comprovante da Prova</label>
+        <input type="file" name="comprovante" class="form-control" required />
+    </div>
+
+    <button class="btn btn-success">Enviar</button>
+    <a asp-action="Etapas" class="btn btn-secondary">Voltar</a>
+</form>

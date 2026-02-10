@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "Agendar Aula Prática";
+}
+
+<h2>📅 Agendar Aula Prática</h2>
+
+<form asp-action="AgendarAula" method="post" class="card p-4 shadow">
+
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">Data da aula</label>
+        <input type="datetime-local" name="data" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Quantidade de horas</label>
+        <select name="horas" class="form-select" required>
+            <option value="2">2 horas</option>
+            <option value="3">3 horas</option>
+            <option value="4">4 horas</option>
+        </select>
+        <small class="text-muted">Mínimo obrigatório: 2h</small>
+    </div>
+
+    <button class="btn btn-success w-100">
+        Agendar Aula
+    </button>
+
+</form>

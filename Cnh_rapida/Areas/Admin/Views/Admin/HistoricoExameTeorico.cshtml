@@ -1,0 +1,100 @@
+﻿@model List<Cnh_rapida.Models.AlunoCnhStatus>
+
+@{
+    ViewData["Title"] = "Histórico - Exame Teórico";
+}
+
+<h2 class="mb-4">📜 Histórico de Exames Teóricos</h2>
+
+<form method="get" class="row g-3 mb-3">
+
+    <div class="col-md-3">
+        <input name="busca"
+               value="@Context.Request.Query["busca"]"
+               class="form-control"
+               placeholder="Buscar aluno..." />
+    </div>
+
+    <div class="col-md-2">
+        <select name="status" class="form-select">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="rejeitado">Rejeitado</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="dataInicio"
+               value="@Context.Request.Query["dataInicio"]"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="dataFim"
+               value="@Context.Request.Query["dataFim"]"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-3 d-grid">
+        <button class="btn btn-primary">Filtrar</button>
+    </div>
+
+</form>
+
+<table class="table table-bordered table-hover align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Aluno</th>
+            <th>Envio</th>
+            <th>Status</th>
+            <th>Comprovante</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Usuario?.NomeCompleto</td>
+
+                <td>
+                    @(item.DataEnvioExameTeorico?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                </td>
+
+                <td>
+                    @if (item.ExameTeoricoAprovado)
+                    {
+                        <span class="badge bg-success">Aprovado</span>
+                    }
+                    else if (item.ExameTeoricoRealizado)
+                    {
+                        <span class="badge bg-warning text-dark">Pendente</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Rejeitado</span>
+                    }
+                </td>
+
+                <td>
+                    @if (!string.IsNullOrEmpty(item.CaminhoExameTeorico))
+                    {
+                        <a href="@item.CaminhoExameTeorico"
+                           target="_blank"
+                           class="btn btn-outline-primary btn-sm">
+                            Visualizar
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>

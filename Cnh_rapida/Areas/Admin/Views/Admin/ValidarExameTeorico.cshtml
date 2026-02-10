@@ -1,0 +1,64 @@
+﻿@model List<Cnh_rapida.Models.AlunoCnhStatus>
+
+@{
+    ViewData["Title"] = "Validação - Exame Teórico";
+}
+
+<h2 class="mb-4">📑 Validação de Exames Teóricos</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-success">
+        Nenhum exame pendente 🎉
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Aluno</th>
+                <th>Data Envio</th>
+                <th>Comprovante</th>
+                <th class="text-center">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Usuario?.NomeCompleto</td>
+                    <td>@item.DataEnvioExameTeorico?.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <a href="@item.CaminhoExameTeorico"
+                           target="_blank"
+                           class="btn btn-outline-primary btn-sm">
+                            Visualizar
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        <form method="post"
+                              action="/Admin/Admin/AprovarExameTeorico"
+                              class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button class="btn btn-success btn-sm">
+                                Aprovar
+                            </button>
+                        </form>
+
+                        <form method="post"
+                              action="/Admin/Admin/ReprovarExameTeorico"
+                              class="d-inline ms-1">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button class="btn btn-danger btn-sm">
+                                Reprovar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,103 @@
+﻿@model List<Cnh_rapida.Models.AlunoCnhStatus>
+
+@{
+    ViewData["Title"] = "Histórico de Exames";
+}
+
+<h2 class="mb-4">📊 Histórico de Exames</h2>
+
+<form method="get" class="row g-2 mb-4">
+
+    <div class="col-md-4">
+        <input type="text"
+               name="busca"
+               value="@Context.Request.Query["busca"]"
+               class="form-control"
+               placeholder="🔎 Buscar aluno..." />
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">Todos</option>
+            <option value="pendente">Pendentes</option>
+            <option value="aprovado">Aprovados</option>
+            <option value="rejeitado">Rejeitados</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="dataInicio"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="dataFim"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-1 d-grid">
+        <button class="btn btn-primary">Filtrar</button>
+    </div>
+
+</form>
+
+<table class="table table-striped table-hover align-middle">
+    <thead>
+        <tr>
+            <th>Aluno</th>
+            <th>Status</th>
+            <th>Enviado em</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Usuario.NomeCompleto</td>
+
+                <td>
+                    @if (item.ExameMedicoAprovado)
+                    {
+                        <span class="badge bg-success">Aprovado</span>
+                    }
+                    else if (item.ExamesEnviados)
+                    {
+                        <span class="badge bg-warning text-dark">Pendente</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Rejeitado</span>
+                    }
+                </td>
+
+                <td>@item.DataEnvioExames?.ToString("dd/MM/yyyy HH:mm")</td>
+
+                <td class="d-flex gap-2">
+
+                    @if (!string.IsNullOrEmpty(item.CaminhoExameMedico))
+                    {
+                        <a href="@item.CaminhoExameMedico"
+                           target="_blank"
+                           class="btn btn-outline-primary btn-sm">
+                            Médico
+                        </a>
+                    }
+
+                    @if (!string.IsNullOrEmpty(item.CaminhoPsicotecnico))
+                    {
+                        <a href="@item.CaminhoPsicotecnico"
+                           target="_blank"
+                           class="btn btn-outline-primary btn-sm">
+                            Psicotécnico
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>

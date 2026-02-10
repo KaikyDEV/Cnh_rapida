@@ -1,0 +1,138 @@
+﻿@model Cnh_rapida.Models.AlunoCnhStatus
+
+@{
+    ViewData["Title"] = "Etapas da CNH";
+}
+
+<h2 class="mb-4">📋 Etapas do Processo de CNH</h2>
+
+<ul class="list-group cnh-steps">
+
+    <!-- ===================== -->
+    <!-- CONTA GOV             -->
+    <!-- ===================== -->
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>Possui Conta CNH Rápida</span>
+
+        @if (!Model.PossuiContaGov)
+        {
+            <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary"
+                   target="_blank"
+                   href="https://operacoes.sp.gov.br/DetranWeb/login?redirect=/DetranWeb/primeiraHabilitacao&auth=false">
+                    Criar Conta Gov
+                </a>
+
+                <form method="post" action="/Aluno/Aluno/ConfirmarContaGov">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-success">
+                        Já possuo
+                    </button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <span class="badge bg-success">Concluído</span>
+        }
+    </li>
+
+    <!-- ===================== -->
+    <!-- EXAME MÉDICO          -->
+        <!-- ===================== -->
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Exame Médico / Psicotécnico</span>
+
+            @if (!Model.PossuiContaGov)
+            {
+                <span class="badge bg-secondary">Bloqueado</span>
+            }
+            else if (!Model.ExamesEnviados)
+            {
+            <button onclick="location.href='@Url.Action("ConfirmarExameMedico","Aluno", new { area="Aluno" })'"
+                    class="btn btn-warning btn-sm">
+                Enviar Exames
+            </button>
+            }
+            else if (!Model.ExameMedicoAprovado)
+            {
+                <span class="badge bg-warning">Aguardando validação</span>
+            }
+            else
+            {
+                <span class="badge bg-success">Concluído</span>
+            }
+        </li>
+
+    <!-- ===================== -->
+    <!-- EXAME TEÓRICO         -->
+    <!-- ===================== -->
+
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+
+        <span>Exame Teórico</span>
+
+
+
+        @if (!Model.ExameMedicoAprovado)
+        {
+            <span class="badge bg-secondary">Bloqueado</span>
+        }
+        else if (!Model.ExameTeoricoRealizado)
+        {
+            <div class="d-flex gap-2 flex-wrap">
+
+                <a href="https://www.aprovadetran.com.br/simulado-detran?gad_source=1&gad_campaignid=22858610377"
+                   target="_blank"
+                   class="btn btn-outline-primary btn-sm">
+                    Simulado
+                </a>
+
+                <a href="https://www.detran.sp.gov.br/detransp/pb/servico/habilitacao/agendar_exame_teorico_de_habilitacao?id=carta_de_servico_agendar_exame_teorico_de_habilitacao"
+                   target="_blank"
+                   class="btn btn-outline-warning btn-sm">
+                    Marcar Prova
+                </a>
+
+                <button onclick="location.href='@Url.Action("ConfirmarExameTeorico","Aluno", new { area="Aluno" })'"
+                        class="btn btn-success btn-sm">
+                    Já Fiz o Exame
+                </button>
+
+            </div>
+        }
+        else if (Model.ExameTeoricoRealizado && !Model.ExameTeoricoAprovado)
+        {
+            <span class="badge bg-warning">Aguardando validação</span>
+        }
+        else if (Model.ExameTeoricoAprovado)
+        {
+            <span class="badge bg-success">Aprovado</span>
+        }
+
+    </li>
+
+    <!-- ===================== -->
+    <!-- AULAS PRÁTICAS        -->
+    <!-- ===================== -->
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>Aulas Práticas</span>
+
+        @if (!Model.ExameTeoricoRealizado)
+        {
+            <span class="badge bg-secondary">Bloqueado</span>
+        }
+        else if (Model.AulasPraticasIniciadas)
+        {
+            <span class="badge bg-success">Em andamento</span>
+        }
+        else
+        {
+            <button onclick="location.href='@Url.Action("IniciarAulasPraticas","Aluno", new { area="Aluno" })'"
+                    class="btn btn-success btn-sm">
+               Iniciar
+            </button>
+        }
+    </li>
+
+</ul>
