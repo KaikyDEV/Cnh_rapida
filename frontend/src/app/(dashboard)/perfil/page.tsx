@@ -1,28 +1,56 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Mail, Phone, Calendar, Pencil, Download, FileText, Trophy } from 'lucide-react';
 import Logo from '@/components/layout/Logo';
-import { mockAlunoCnhStatus } from '@/mocks/alunoCnhStatus';
-import { mockAulasPraticas } from '@/mocks/aulasPraticas';
+import { alunoService, AulaPraticaResponse } from '@/services/alunoService';
+import { AlunoCnhStatus } from '@/types';
 
 export default function PerfilPage() {
     const { usuario } = useAuth();
+    const [status, setStatus] = useState<AlunoCnhStatus | null>(null);
+    const [aulas, setAulas] = useState<AulaPraticaResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const [statusData, aulasData] = await Promise.all([
+                    alunoService.buscarStatus(),
+                    alunoService.buscarMinhasAulas(),
+                ]);
+                setStatus(statusData);
+                setAulas(aulasData);
+            } catch (error) {
+                console.error('Erro ao carregar status:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
 
     if (!usuario) return null;
 
-    const aulasRealizadas = mockAulasPraticas.filter(a => a.realizada).length;
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="w-10 h-10 border-3 border-cnh-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    const aulasRealizadas = aulas.filter(a => a.realizada).length;
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6">
                 {/* Profile Card */}
                 <Card className="p-6 rounded-xl border border-cnh-border text-center">
-                    {/* Avatar */}
                     <div className="w-20 h-20 rounded-full bg-cnh-primary-dark flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
                         {usuario.nomeCompleto.charAt(0).toUpperCase()}
                     </div>
@@ -69,10 +97,8 @@ export default function PerfilPage() {
                         </Button>
                     </div>
 
-                    {/* Certificate document */}
                     <div className="p-6 bg-white">
                         <div className="border border-cnh-border rounded-lg p-6 space-y-4">
-                            {/* Header */}
                             <div className="flex items-center justify-between">
                                 <Logo size="sm" />
                                 <div className="text-right text-xs text-cnh-text-muted">
@@ -83,7 +109,6 @@ export default function PerfilPage() {
 
                             <div className="h-1 bg-gradient-to-r from-cnh-primary to-cnh-primary-light rounded-full" />
 
-                            {/* Content */}
                             <div className="text-center py-4">
                                 <h4 className="text-lg font-bold text-cnh-text-primary mb-3">
                                     Certificado de Conclusão
@@ -98,7 +123,6 @@ export default function PerfilPage() {
                                 </p>
                             </div>
 
-                            {/* Details grid */}
                             <div className="grid grid-cols-2 gap-3 bg-cnh-bg-base rounded-lg p-4 text-sm">
                                 <div>
                                     <p className="text-xs text-cnh-text-muted">CPF</p>
@@ -118,7 +142,6 @@ export default function PerfilPage() {
                                 </div>
                             </div>
 
-                            {/* Footer */}
                             <div className="flex items-center justify-between pt-2 text-xs">
                                 <div className="flex items-center gap-1.5 text-cnh-success">
                                     <Trophy size={14} />
@@ -141,7 +164,7 @@ export default function PerfilPage() {
                         { nome: 'Comprovante de Matrícula', tamanho: '245 KB' },
                         { nome: 'Histórico de Aulas', tamanho: '180 KB' },
                         { nome: 'Certificado de Conclusão Teórica', tamanho: '320 KB' },
-                        ...(mockAlunoCnhStatus.caminhoExameMedico
+                        ...(status?.caminhoExameMedico
                             ? [{ nome: 'Laudo Médico', tamanho: '156 KB' }]
                             : []),
                     ].map((doc) => (

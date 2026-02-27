@@ -10,6 +10,7 @@ import Step3Data from '@/components/booking/steps/Step3Data';
 import Step4Horario from '@/components/booking/steps/Step4Horario';
 import Step5Confirmacao from '@/components/booking/steps/Step5Confirmacao';
 import { Button } from '@/components/ui/button';
+import { agendamentoService } from '@/services/agendamentoService';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { TipoAula } from '@/types';
@@ -109,10 +110,18 @@ function BookingWizardContent() {
                         <Step5Confirmacao
                             bookingData={bookingData}
                             onBack={goBack}
-                            onConfirm={() => {
-                                console.log('Agendamento confirmado:', bookingData);
-                                alert('Aula agendada com sucesso! 🎉');
-                                window.location.href = '/aluno';
+                            onConfirm={async () => {
+                                try {
+                                    await agendamentoService.confirmarAgendamento(
+                                        `${bookingData.data}T${bookingData.horario}:00`,
+                                        2 // Mínimo de 2 horas como definido na regra de negócio
+                                    );
+                                    alert('Aula agendada com sucesso! 🎉');
+                                    window.location.href = '/aluno';
+                                } catch (error) {
+                                    console.error('Erro ao agendar:', error);
+                                    alert('Erro ao agendar aula. Tente novamente.');
+                                }
                             }}
                         />
                     )}

@@ -1,11 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, BookOpen, Trophy, Clock, Users, Ban, Star } from 'lucide-react';
+import { Calendar, Trophy, Clock, Users, Ban, Star } from 'lucide-react';
 import Link from 'next/link';
-import { mockAulasPraticas } from '@/mocks/aulasPraticas';
+import { alunoService, AulaPraticaResponse } from '@/services/alunoService';
 
 export default function HomePage() {
     const { usuario } = useAuth();
@@ -35,9 +36,34 @@ export default function HomePage() {
 }
 
 function AlunoDashboard() {
-    const aulasRealizadas = mockAulasPraticas.filter(a => a.realizada).length;
+    const [aulas, setAulas] = useState<AulaPraticaResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const data = await alunoService.buscarMinhasAulas();
+                setAulas(data);
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+    const aulasRealizadas = aulas.filter(a => a.realizada).length;
     const totalAulas = 25;
-    const proximaAula = mockAulasPraticas.find(a => !a.realizada);
+    const proximaAula = aulas.find(a => !a.realizada);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="w-10 h-10 border-3 border-cnh-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <>

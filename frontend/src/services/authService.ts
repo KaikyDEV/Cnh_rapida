@@ -1,68 +1,90 @@
 import { Usuario } from '@/types';
 import { LoginFormData } from '@/schemas/loginSchema';
 import { CadastroFormData } from '@/schemas/cadastroSchema';
-import { mockUsuarios } from '@/mocks/usuarios';
+import { authApi } from './api';
 
-// Mock: simula autenticação até o backend estar disponível
-// Substituir por chamadas reais em api.ts quando integrado
+/**
+ * ASP.NET Identity minimal API:
+ *  - POST /login       → retorna { accessToken, ... } ou setar Cookie
+ *  - POST /register    → retorna 200 OK
+ *  - GET /manage/info  → retorna informações do usuário logado
+ */
+
+interface IdentityLoginResponse {
+    accessToken?: string;
+    tokenType?: string;
+    expiresIn?: number;
+    refreshToken?: string;
+}
+
+interface IdentityInfoResponse {
+    email: string;
+    isEmailConfirmed: boolean;
+}
 
 export const authService = {
     /**
-     * Login com email e senha (mock)
-     * Verifica contra a lista de usuários mockados
+     * Login com email e senha
+     * POST /login
      */
     async login(data: LoginFormData): Promise<{ usuario: Usuario; token: string }> {
-        // Simula delay de rede
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const response = await authApi.post<IdentityLoginResponse>('/login', {
+            email: data.email,
+            password: data.senha,
+        });
 
-        const usuario = mockUsuarios.find(u => u.email === data.email);
-        if (!usuario) {
-            throw new Error('E-mail ou senha incorretos');
+        const token = response.data.accessToken || '';
+
+        if (token && typeof window !== 'undefined') {
+            localStorage.setItem('cnhrapido_token', token);
         }
 
-        // Mock: qualquer senha >= 6 chars é aceita
-        const token = `mock_token_${usuario.id}_${Date.now()}`;
+        const infoResponse = await authApi.get<IdentityInfoResponse>('/manage/info');
+
+        const usuario: Usuario = {
+            id: infoResponse.data.email,
+            nomeCompleto: infoResponse.data.email.split('@')[0],
+            email: infoResponse.data.email,
+            role: 'Aluno',
+            dataCriacao: new Date().toISOString(),
+            dataNascimento: new Date().toISOString(),
+            cpf: '',
+            estado: '',
+            nomeOuEmail: infoResponse.data.email,
+        };
 
         return { usuario, token };
     },
 
     /**
-     * Cadastro de novo usuário (mock)
+     * Cadastro de novo usuário
+     * POST /register
      */
     async cadastro(data: CadastroFormData): Promise<{ usuario: Usuario; token: string }> {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Verifica se email já existe
-        const existente = mockUsuarios.find(u => u.email === data.email);
-        if (existente) {
-            throw new Error('Este e-mail já está cadastrado');
-        }
-
-        const novoUsuario: Usuario = {
-            id: `usr-${Date.now()}`,
-            nomeCompleto: data.nomeCompleto,
+        await authApi.post('/register', {
             email: data.email,
-            phoneNumber: data.phoneNumber,
-            estado: data.estado,
-            dataNascimento: data.dataNascimento,
-            cpf: data.cpf,
-            dataCriacao: new Date().toISOString(),
-            role: data.tipoConta,
-            nomeOuEmail: data.nomeCompleto,
-        };
+            password: data.senha,
+        });
 
-        const token = `mock_token_${novoUsuario.id}_${Date.now()}`;
-        return { usuario: novoUsuario, token };
+        return this.login({
+            email: data.email,
+            senha: data.senha,
+        });
     },
 
     /**
-     * Logout — limpa dados de autenticação
+     * Logout
      */
     async logout(): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('cnhrapido_token');
-            localStorage.removeItem('cnhrapido_user');
+        try {
+            await authApi.post('/logout');
+        } catch (e) {
+            console.warn('Logout failed', e);
+        } finally {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('cnhrapido_token');
+                localStorage.removeItem('cnhrapido_user');
+            }
         }
     },
 };

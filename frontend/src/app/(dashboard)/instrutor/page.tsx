@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { mockAgendaHoje, AgendaItem } from '@/services/instrutorService';
+import { instrutorService, AgendaItem } from '@/services/instrutorService';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus, Settings, User, X, Star, Clock, Calendar } from 'lucide-react';
 import BlockScheduleModal from '@/components/booking/BlockScheduleModal';
 import Logo from '@/components/layout/Logo';
@@ -26,8 +27,31 @@ function getStatusForBadge(status: AgendaItem['status']): 'Agendada' | 'Realizad
 }
 
 export default function InstrutorPage() {
+    const { usuario } = useAuth();
     const [diaSelecionado, setDiaSelecionado] = useState(17);
     const [modalAberto, setModalAberto] = useState(false);
+    const [agenda, setAgenda] = useState<AgendaItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchAgenda() {
+            if (!usuario) return;
+            try {
+                setLoading(true);
+                const data = await instrutorService.buscarAgenda(
+                    usuario.id,
+                    `2026-02-${diaSelecionado.toString().padStart(2, '0')}`
+                );
+                setAgenda(data);
+            } catch (error) {
+                console.error('Erro ao carregar agenda:', error);
+                setAgenda([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchAgenda();
+    }, [usuario, diaSelecionado]);
 
     return (
         <div className="max-w-6xl mx-auto animate-fade-in-up">
@@ -57,7 +81,7 @@ export default function InstrutorPage() {
                     <div className="flex items-center gap-2">
                         <h2 className="text-lg font-bold text-cnh-text-primary">Agenda de Hoje</h2>
                         <span className="text-sm text-cnh-text-secondary flex items-center gap-1">
-                            <Calendar size={14} /> 17/02/2026
+                            <Calendar size={14} /> {diaSelecionado}/02/2026
                         </span>
                     </div>
 
@@ -84,32 +108,43 @@ export default function InstrutorPage() {
 
                     {/* Lesson list */}
                     <div className="space-y-3">
-                        {mockAgendaHoje.map((aula, index) => (
-                            <Card key={index} className="p-4 rounded-xl border border-cnh-border card-hover">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        {/* Time */}
-                                        <span className="text-sm font-bold text-cnh-primary min-w-[50px]">
-                                            {aula.horario}
-                                        </span>
-                                        {/* Student name */}
-                                        <div>
-                                            <p className="text-sm font-semibold text-cnh-text-primary">{aula.nomeAluno}</p>
-                                            <p className="text-xs text-cnh-text-muted">{aula.tipoAula}</p>
+                        {loading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="w-8 h-8 border-3 border-cnh-primary border-t-transparent rounded-full animate-spin" />
+                            </div>
+                        ) : agenda.length > 0 ? (
+                            agenda.map((aula, index) => (
+                                <Card key={index} className="p-4 rounded-xl border border-cnh-border card-hover">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            {/* Time */}
+                                            <span className="text-sm font-bold text-cnh-primary min-w-[50px]">
+                                                {aula.horario}
+                                            </span>
+                                            {/* Student name */}
+                                            <div>
+                                                <p className="text-sm font-semibold text-cnh-text-primary">{aula.nomeAluno}</p>
+                                                <p className="text-xs text-cnh-text-muted">{aula.tipoAula}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <StatusBadge status={getStatusForBadge(aula.status)} />
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-cnh-text-muted hover:text-cnh-primary">
+                                                <User size={16} />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-cnh-text-muted hover:text-cnh-error">
+                                                <X size={16} />
+                                            </Button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <StatusBadge status={getStatusForBadge(aula.status)} />
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-cnh-text-muted hover:text-cnh-primary">
-                                            <User size={16} />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-cnh-text-muted hover:text-cnh-error">
-                                            <X size={16} />
-                                        </Button>
-                                    </div>
-                                </div>
+                                </Card>
+                            ))
+                        ) : (
+                            <Card className="p-8 rounded-xl border border-cnh-border text-center">
+                                <div className="text-4xl mb-3">📅</div>
+                                <p className="text-cnh-text-secondary">Nenhuma aula agendada para este dia</p>
                             </Card>
-                        ))}
+                        )}
                     </div>
                 </div>
 
@@ -118,9 +153,9 @@ export default function InstrutorPage() {
                     {/* Profile card */}
                     <Card className="p-5 rounded-xl border border-cnh-border text-center">
                         <div className="w-16 h-16 rounded-full bg-cnh-primary-dark flex items-center justify-center text-white font-bold text-xl mx-auto mb-3">
-                            C
+                            {usuario?.nomeCompleto.charAt(0) ?? 'I'}
                         </div>
-                        <h3 className="font-bold text-cnh-text-primary">Carlos Silva</h3>
+                        <h3 className="font-bold text-cnh-text-primary">{usuario?.nomeCompleto ?? 'Instrutor'}</h3>
                         <p className="text-xs text-cnh-text-secondary mb-2">Instrutor Certificado DETRAN</p>
                         <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-cnh-primary/10 text-cnh-primary font-medium">
                             Categoria A e B
@@ -142,7 +177,7 @@ export default function InstrutorPage() {
                     {/* Stats */}
                     <Card className="p-5 rounded-xl border border-cnh-border">
                         <h4 className="text-sm text-cnh-text-secondary font-medium mb-2">Aulas Hoje</h4>
-                        <p className="text-4xl font-bold text-cnh-text-primary">5</p>
+                        <p className="text-4xl font-bold text-cnh-text-primary">{agenda.length}</p>
                     </Card>
 
                     <Card className="p-5 rounded-xl border border-cnh-border">

@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
-import { mockInstrutores } from '@/services/instrutorService';
+import { instrutorService } from '@/services/instrutorService';
+import { InstrutorDisplay } from '@/types';
 
 interface Step2Props {
     selected: string | null;
@@ -12,6 +14,33 @@ interface Step2Props {
 }
 
 export default function Step2Instrutor({ selected, onSelect, onSkip }: Step2Props) {
+    const [instrutores, setInstrutores] = useState<InstrutorDisplay[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchInstrutores() {
+            try {
+                const data = await instrutorService.buscarInstrutores();
+                setInstrutores(data);
+            } catch (error) {
+                console.error('Erro ao carregar instrutores:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchInstrutores();
+    }, []);
+
+    if (loading) {
+        return (
+            <Card className="p-6 sm:p-8 rounded-xl border border-cnh-border">
+                <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-3 border-cnh-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+            </Card>
+        );
+    }
+
     return (
         <Card className="p-6 sm:p-8 rounded-xl border border-cnh-border">
             <div className="flex items-center justify-between mb-1">
@@ -28,7 +57,7 @@ export default function Step2Instrutor({ selected, onSelect, onSkip }: Step2Prop
             </p>
 
             <div className="space-y-3">
-                {mockInstrutores.map((inst) => {
+                {instrutores.map((inst) => {
                     const isSelected = selected === inst.usuario.id;
 
                     return (

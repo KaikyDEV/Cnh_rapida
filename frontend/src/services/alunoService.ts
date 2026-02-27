@@ -1,63 +1,46 @@
-import { AlunoCnhStatus, AulaPratica } from '@/types';
-import { mockAlunoCnhStatus } from '@/mocks/alunoCnhStatus';
+import { AlunoCnhStatus } from '@/types';
+import { alunoApi } from './api';
 
-// Mock: simula chamadas ao backend para dados do aluno
-// Substituir por chamadas reais em api.ts quando integrado
+export interface AulaPraticaResponse {
+    id: number;
+    data: string;
+    quantidadeHoras: number;
+    realizada: boolean;
+}
 
 export const alunoService = {
-    /**
-     * Busca o status completo do CNH do aluno
-     */
-    async buscarStatus(usuarioId: string): Promise<AlunoCnhStatus> {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        if (usuarioId === mockAlunoCnhStatus.usuarioId) {
-            return mockAlunoCnhStatus;
-        }
-        throw new Error('Aluno não encontrado');
+    // Busca status do aluno
+    async buscarStatus(): Promise<AlunoCnhStatus> {
+        const response = await alunoApi.get<AlunoCnhStatus>('/status');
+        return response.data;
     },
 
-    /**
-     * Busca as próximas aulas agendadas
-     */
-    async buscarProximasAulas(usuarioId: string): Promise<AulaPratica[]> {
-        await new Promise(resolve => setTimeout(resolve, 400));
-
-        const status = await this.buscarStatus(usuarioId);
-        return status.aulasPraticas.filter(a => !a.realizada);
+    // Agendar Aula Prática
+    async agendarAula(data: string, horas: number) {
+        const response = await alunoApi.post('/agendar-aula', {
+            data,
+            horas
+        });
+        return response.data;
     },
 
-    /**
-     * Busca aulas realizadas
-     */
-    async buscarAulasRealizadas(usuarioId: string): Promise<AulaPratica[]> {
-        await new Promise(resolve => setTimeout(resolve, 400));
-
-        const status = await this.buscarStatus(usuarioId);
-        return status.aulasPraticas.filter(a => a.realizada);
+    // Buscar TODAS as aulas do aluno
+    async buscarMinhasAulas(): Promise<AulaPraticaResponse[]> {
+        const response = await alunoApi.get<AulaPraticaResponse[]>('/minhas-aulas');
+        return response.data;
     },
 
-    /**
-     * Agenda uma nova aula prática
-     */
-    async agendarAula(aula: Omit<AulaPratica, 'id' | 'criadoEm'>): Promise<AulaPratica> {
-        await new Promise(resolve => setTimeout(resolve, 800));
+    // --- MÉTODOS AUXILIARES FALTANTES --- //
 
-        const novaAula: AulaPratica = {
-            ...aula,
-            id: Math.floor(Math.random() * 10000),
-            criadoEm: new Date().toISOString(),
-        };
-
-        return novaAula;
+    // Filtra apenas as próximas aulas (não realizadas)
+    async buscarProximasAulas(): Promise<AulaPraticaResponse[]> {
+        const aulas = await this.buscarMinhasAulas();
+        return aulas.filter(a => !a.realizada);
     },
 
-    /**
-     * Cancela uma aula agendada
-     */
-    async cancelarAula(aulaId: number): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        // Mock: sem efeito real, apenas simula a chamada
-        console.log(`Aula ${aulaId} cancelada (mock)`);
-    },
+    // Filtra apenas as aulas passadas (já realizadas)
+    async buscarAulasRealizadas(): Promise<AulaPraticaResponse[]> {
+        const aulas = await this.buscarMinhasAulas();
+        return aulas.filter(a => a.realizada);
+    }
 };

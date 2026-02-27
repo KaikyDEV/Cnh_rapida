@@ -1,11 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ProgressCircle from '@/components/shared/ProgressCircle';
-import AulaCard from '@/components/shared/AulaCard';
-import { mockAulasPraticas } from '@/mocks/aulasPraticas';
-import { mockInstrutores } from '@/services/instrutorService';
+import { alunoService } from '@/services/alunoService';
+import type { AulaPraticaResponse } from '@/services/alunoService';
+import { instrutorService } from '@/services/instrutorService';
+import { InstrutorDisplay } from '@/types';
 import { Star, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,9 +19,39 @@ const tiposAula = [
 ];
 
 export default function AlunoPage() {
-    const aulasRealizadas = mockAulasPraticas.filter(a => a.realizada).length;
+    const [aulas, setAulas] = useState<AulaPraticaResponse[]>([]);
+    const [instrutores, setInstrutores] = useState<InstrutorDisplay[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const [aulasData, instrutoresData] = await Promise.all([
+                    alunoService.buscarMinhasAulas(),
+                    instrutorService.buscarInstrutores(),
+                ]);
+                setAulas(aulasData);
+                setInstrutores(instrutoresData);
+            } catch (error) {
+                console.error('Erro ao carregar dados do aluno:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="w-10 h-10 border-3 border-cnh-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    const aulasRealizadas = aulas.filter(a => a.realizada).length;
     const totalAulas = 25;
-    const proximasAulas = mockAulasPraticas.filter(a => !a.realizada);
+    const proximasAulas = aulas.filter(a => !a.realizada);
     const porcentagem = Math.round((aulasRealizadas / totalAulas) * 100);
 
     return (
@@ -36,12 +68,21 @@ export default function AlunoPage() {
                 {proximasAulas.length > 0 ? (
                     <div className="space-y-3">
                         {proximasAulas.map((aula) => (
-                            <AulaCard
-                                key={aula.id}
-                                aula={aula}
-                                instrutor="Carlos Silva"
-                                onCancel={(id) => console.log('Cancelar aula:', id)}
-                            />
+                            <Card key={aula.id} className="p-4 rounded-xl border border-cnh-border card-hover">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-sm font-bold text-cnh-primary min-w-[80px]">
+                                            {new Date(aula.data).toLocaleDateString('pt-BR')}
+                                        </span>
+                                        <div>
+                                            <p className="text-sm font-semibold text-cnh-text-primary">
+                                                {new Date(aula.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                            <p className="text-xs text-cnh-text-muted">{aula.quantidadeHoras}h de aula</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
                         ))}
                     </div>
                 ) : (
@@ -108,7 +149,7 @@ export default function AlunoPage() {
             <section>
                 <h2 className="text-lg font-bold text-cnh-text-primary mb-4">Instrutores Mais Avaliados</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {mockInstrutores.map((inst) => (
+                    {instrutores.map((inst) => (
                         <Link key={inst.usuario.id} href={`/agendamento?instrutor=${inst.usuario.id}`}>
                             <Card className="p-4 rounded-xl border border-cnh-border card-hover cursor-pointer">
                                 <div className="flex items-center gap-3">
