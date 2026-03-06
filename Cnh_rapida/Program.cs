@@ -82,11 +82,15 @@ using (var scope = app.Services.CreateScope())
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = services.GetRequiredService<UserManager<Usuario>>();
 
-    if (!await roleManager.RoleExistsAsync("Aluno"))
-        await roleManager.CreateAsync(new IdentityRole("Aluno"));
+    string[] roles = { "Admin", "Aluno", "Instrutor" };
 
-    if (!await roleManager.RoleExistsAsync("Admin"))
-        await roleManager.CreateAsync(new IdentityRole("Admin"));
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
 
     string adminEmail = "admin@cnhrapida.com.br";
     string adminPassword = "Admin@123";
@@ -110,6 +114,27 @@ using (var scope = app.Services.CreateScope())
         else
             throw new Exception("Erro ao criar admin: " +
                 string.Join(" | ", resultado.Errors.Select(e => e.Description)));
+    }
+
+    string instrutorEmail = "instrutor@cnhrapida.com.br";
+    string instrutorPassword = "Instrutor@123";
+
+    var instrutorUser = await userManager.FindByEmailAsync(instrutorEmail);
+
+    if (instrutorUser == null)
+    {
+        var novoInstrutor = new Usuario
+        {
+            UserName = instrutorEmail,
+            Email = instrutorEmail,
+            EmailConfirmed = true,
+            NomeCompleto = "Carlos Silva"
+        };
+
+        var resultado = await userManager.CreateAsync(novoInstrutor, instrutorPassword);
+
+        if (resultado.Succeeded)
+            await userManager.AddToRoleAsync(novoInstrutor, "Instrutor");
     }
 }
 

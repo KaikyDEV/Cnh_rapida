@@ -4,6 +4,7 @@ using Cnh_rapida.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cnh_rapida.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260306192136_FixInstrutor")]
+    partial class FixInstrutor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -98,9 +101,6 @@ namespace Cnh_rapida.Data.Migrations
                     b.Property<int>("AlunoCnhStatusId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("AlunoCnhStatusId1")
-                        .HasColumnType("int");
-
                     b.Property<bool>("Aprovada")
                         .HasColumnType("bit");
 
@@ -112,9 +112,6 @@ namespace Cnh_rapida.Data.Migrations
 
                     b.Property<DateTime>("Data")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("InstrutorPerfilId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Observacao")
                         .HasColumnType("nvarchar(max)");
@@ -128,10 +125,6 @@ namespace Cnh_rapida.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AlunoCnhStatusId");
-
-                    b.HasIndex("AlunoCnhStatusId1");
-
-                    b.HasIndex("InstrutorPerfilId");
 
                     b.ToTable("AulasPraticas");
                 });
@@ -413,23 +406,12 @@ namespace Cnh_rapida.Data.Migrations
             modelBuilder.Entity("Cnh_rapida.Models.AulaPratica", b =>
                 {
                     b.HasOne("Cnh_rapida.Models.AlunoCnhStatus", "AlunoStatus")
-                        .WithMany()
+                        .WithMany("AulasPraticas")
                         .HasForeignKey("AlunoCnhStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cnh_rapida.Models.AlunoCnhStatus", null)
-                        .WithMany("AulasPraticas")
-                        .HasForeignKey("AlunoCnhStatusId1");
-
-                    b.HasOne("Cnh_rapida.Models.PerfilInstrutor", "Instrutor")
-                        .WithMany()
-                        .HasForeignKey("InstrutorPerfilId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("AlunoStatus");
-
-                    b.Navigation("Instrutor");
                 });
 
             modelBuilder.Entity("Cnh_rapida.Models.PerfilInstrutor", b =>

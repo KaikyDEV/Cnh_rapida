@@ -10,12 +10,13 @@ export interface AgendaItem {
 }
 
 export const instrutorService = {
+
     /**
      * Busca lista de instrutores disponíveis
-     * GET /api/aluno/instrutor/instrutores (Assuming instrutor endpoints are under alumno backend for now)
+     * GET /api/aluno/instrutores
      */
     async buscarInstrutores(): Promise<InstrutorDisplay[]> {
-        const response = await alunoApi.get<InstrutorDisplay[]>('/instrutor/instrutores');
+        const response = await alunoApi.get<InstrutorDisplay[]>('/instrutores');
         return response.data;
     },
 
@@ -23,7 +24,7 @@ export const instrutorService = {
      * Busca a agenda de um instrutor para uma data
      * GET /api/aluno/instrutor/agenda?instrutorId=X&data=Y
      */
-    async buscarAgenda(instrutorId: string, data: string): Promise<AgendaItem[]> {
+    async buscarAgenda(instrutorId: number, data: string): Promise<AgendaItem[]> {
         const response = await alunoApi.get<AgendaItem[]>('/instrutor/agenda', {
             params: { instrutorId, data },
         });
@@ -35,7 +36,7 @@ export const instrutorService = {
      * POST /api/aluno/instrutor/bloquear-horario
      */
     async bloquearHorario(
-        instrutorId: string,
+        instrutorId: number,
         data: string,
         horaInicio: string,
         horaFim: string,
@@ -54,7 +55,10 @@ export const instrutorService = {
      * Busca horários disponíveis para agendamento
      * GET /api/aluno/instrutor/horarios-disponiveis?instrutorId=X&data=Y
      */
-    async buscarHorariosDisponiveis(instrutorId: string, data: string): Promise<string[]> {
+    async buscarHorariosDisponiveis(
+        instrutorId: number,
+        data: string
+    ): Promise<string[]> {
         const response = await alunoApi.get<string[]>('/instrutor/horarios-disponiveis', {
             params: { instrutorId, data },
         });

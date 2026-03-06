@@ -33,4 +33,5 @@ public class AlunoCnhStatus
 
     public virtual ICollection<AulaPratica> AulasPraticas { get; set; }
     = new List<AulaPratica>();
+
 }

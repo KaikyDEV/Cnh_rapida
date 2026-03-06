@@ -3,5 +3,8 @@
 public class AgendarAulaDto
 {
     public DateTime Data { get; set; }
+
     public int Horas { get; set; }
+
+    public int InstrutorId { get; set; }
 }

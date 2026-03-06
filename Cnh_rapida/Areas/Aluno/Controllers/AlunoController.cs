@@ -91,4 +91,37 @@ public class AlunoController : ControllerBase
 
         return Ok(aulas);
     }
+
+    [HttpGet("instrutor/instrutores")]
+    public async Task<IActionResult> ListarInstrutores()
+    {
+        var instrutores = await _context.PerfisInstrutor
+            .Where(i => i.Ativo)
+            .Select(i => new
+            {
+                id = i.Id,
+                nome = i.Usuario.NomeCompleto,
+                categoria = i.Categoria
+            })
+            .ToListAsync();
+
+        return Ok(instrutores);
+    }
+
+[HttpGet("instrutor/agenda")]
+public async Task<IActionResult> Agenda(int instrutorId, DateTime data)
+{
+    var agenda = await _context.AulasPraticas
+        .Where(a => a.InstrutorPerfilId == instrutorId && a.Data.Date == data.Date)
+        .Select(a => new
+        {
+            horario = a.Data.ToString("HH:mm"),
+            nomeAluno = a.AlunoStatus.Usuario.NomeCompleto,
+            status = a.Realizada ? "Concluída" : "Agendada",
+            tipoAula = "Prática"
+        })
+        .ToListAsync();
+
+    return Ok(agenda);
+}
 }

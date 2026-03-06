@@ -19,4 +19,8 @@ public class AulaPratica
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 
     public bool Aprovada { get; set; } = false;
+
+    public int? InstrutorPerfilId { get; set; }
+
+    public PerfilInstrutor? Instrutor { get; set; }
 }

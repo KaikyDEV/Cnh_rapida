@@ -16,10 +16,10 @@ export const agendamentoService = {
     /**
      * Busca horários disponíveis de um instrutor em uma data
      */
-    async buscarHorariosDisponiveis(instrutorId: string, data: string): Promise<string[]> {
+    async buscarHorariosDisponiveis(instrutorId: number, data: string): Promise<string[]> {
         return instrutorService.buscarHorariosDisponiveis(instrutorId, data);
     },
-
+    
     /**
      * Confirma e cria um novo agendamento de aula prática
      * Usa POST /api/aluno/agendar-aula
