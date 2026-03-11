@@ -1,4 +1,4 @@
-﻿using Cnh_rapida.Data;
+using Cnh_rapida.Data;
 using Cnh_rapida.DTOs;
 using Cnh_rapida.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -60,6 +60,18 @@ public class AlunoController : ControllerBase
             QuantidadeHoras = dto.Horas
         };
 
+        // 🔥 Associar instrutor se fornecido
+        if (!string.IsNullOrEmpty(dto.InstrutorId))
+        {
+            var perfil = await _context.PerfisInstrutor
+                .FirstOrDefaultAsync(p => p.UsuarioId == dto.InstrutorId);
+            
+            if (perfil != null)
+            {
+                aula.InstrutorPerfilId = perfil.Id;
+            }
+        }
+
         _context.AulasPraticas.Add(aula);
         await _context.SaveChangesAsync();
 
@@ -92,36 +104,24 @@ public class AlunoController : ControllerBase
         return Ok(aulas);
     }
 
-    [HttpGet("instrutor/instrutores")]
+    [HttpGet("instrutores")]
     public async Task<IActionResult> ListarInstrutores()
     {
         var instrutores = await _context.PerfisInstrutor
             .Where(i => i.Ativo)
             .Select(i => new
             {
-                id = i.Id,
-                nome = i.Usuario.NomeCompleto,
-                categoria = i.Categoria
+                usuario = new
+                {
+                    id = i.UsuarioId,
+                    nomeCompleto = i.Usuario.NomeCompleto
+                },
+                especialidade = "Instrutor " + i.Categoria,
+                avaliacao = 4.8, // Mock por enquanto
+                aulasMinistradas = 150 // Mock por enquanto
             })
             .ToListAsync();
 
         return Ok(instrutores);
     }
-
-[HttpGet("instrutor/agenda")]
-public async Task<IActionResult> Agenda(int instrutorId, DateTime data)
-{
-    var agenda = await _context.AulasPraticas
-        .Where(a => a.InstrutorPerfilId == instrutorId && a.Data.Date == data.Date)
-        .Select(a => new
-        {
-            horario = a.Data.ToString("HH:mm"),
-            nomeAluno = a.AlunoStatus.Usuario.NomeCompleto,
-            status = a.Realizada ? "Concluída" : "Agendada",
-            tipoAula = "Prática"
-        })
-        .ToListAsync();
-
-    return Ok(agenda);
-}
 }

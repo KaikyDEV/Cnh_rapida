@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (storedUser && storedToken) {
             try {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setUsuario(JSON.parse(storedUser));
             } catch {
                 localStorage.removeItem('cnhrapido_user');

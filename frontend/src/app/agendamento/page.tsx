@@ -114,7 +114,8 @@ function BookingWizardContent() {
                                 try {
                                     await agendamentoService.confirmarAgendamento(
                                         `${bookingData.data}T${bookingData.horario}:00`,
-                                        2 // Mínimo de 2 horas como definido na regra de negócio
+                                        2, // Mínimo de 2 horas como definido na regra de negócio
+                                        bookingData.instrutorId
                                     );
                                     alert('Aula agendada com sucesso! 🎉');
                                     window.location.href = '/aluno';

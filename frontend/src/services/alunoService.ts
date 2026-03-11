@@ -16,10 +16,11 @@ export const alunoService = {
     },
 
     // Agendar Aula Prática
-    async agendarAula(data: string, horas: number) {
+    async agendarAula(data: string, horas: number, instrutorId?: string | null) {
         const response = await alunoApi.post('/agendar-aula', {
             data,
-            horas
+            horas,
+            instrutorId
         });
         return response.data;
     },

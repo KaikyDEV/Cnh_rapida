@@ -1,5 +1,5 @@
 import { InstrutorDisplay } from '@/types';
-import { alunoApi } from './api';
+import { alunoApi, instrutorApi } from './api';
 
 // Interface para itens da agenda do instrutor
 export interface AgendaItem {
@@ -22,10 +22,10 @@ export const instrutorService = {
 
     /**
      * Busca a agenda de um instrutor para uma data
-     * GET /api/aluno/instrutor/agenda?instrutorId=X&data=Y
+     * GET /api/instrutor/agenda?instrutorId=X&data=Y
      */
-    async buscarAgenda(instrutorId: number, data: string): Promise<AgendaItem[]> {
-        const response = await alunoApi.get<AgendaItem[]>('/instrutor/agenda', {
+    async buscarAgenda(instrutorId: string, data: string): Promise<AgendaItem[]> {
+        const response = await instrutorApi.get<AgendaItem[]>('/agenda', {
             params: { instrutorId, data },
         });
         return response.data;
@@ -33,16 +33,16 @@ export const instrutorService = {
 
     /**
      * Bloqueia um horário na agenda do instrutor
-     * POST /api/aluno/instrutor/bloquear-horario
+     * POST /api/instrutor/bloquear-horario
      */
     async bloquearHorario(
-        instrutorId: number,
+        instrutorId: string,
         data: string,
         horaInicio: string,
         horaFim: string,
         motivo?: string
     ): Promise<void> {
-        await alunoApi.post('/instrutor/bloquear-horario', {
+        await instrutorApi.post('/bloquear-horario', {
             instrutorId,
             data,
             horaInicio,
@@ -56,7 +56,7 @@ export const instrutorService = {
      * GET /api/aluno/instrutor/horarios-disponiveis?instrutorId=X&data=Y
      */
     async buscarHorariosDisponiveis(
-        instrutorId: number,
+        instrutorId: string,
         data: string
     ): Promise<string[]> {
         const response = await alunoApi.get<string[]>('/instrutor/horarios-disponiveis', {

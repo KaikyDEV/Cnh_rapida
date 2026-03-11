@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Cnh_rapida/frontend/src/services/api.ts
-import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 
 // Módulo de Autenticação (Identity Minimal API)
 export const authApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:5143',
-    timeout: 10000,
+    timeout: 30000,
     withCredentials: true, // Importante se o backend usar cookies de autenticação
     headers: {
         'Content-Type': 'application/json',
@@ -15,7 +15,7 @@ export const authApi = axios.create({
 // Módulo do Aluno
 export const alunoApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_ALUNO_URL || 'http://localhost:5143/api/aluno',
-    timeout: 10000,
+    timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -24,7 +24,16 @@ export const alunoApi = axios.create({
 // Módulo do Admin
 export const adminApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:5143/api/admin',
-    timeout: 10000,
+    timeout: 30000,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Módulo do Instrutor
+export const instrutorApi = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_INSTRUTOR_URL || 'http://localhost:5143/api/instrutor',
+    timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -47,6 +56,7 @@ const addAuthToken = (config: InternalAxiosRequestConfig) => {
 authApi.interceptors.request.use(addAuthToken);
 alunoApi.interceptors.request.use(addAuthToken);
 adminApi.interceptors.request.use(addAuthToken);
+instrutorApi.interceptors.request.use(addAuthToken);
 
 /**
  * Interceptor de Response Compartilhado
@@ -71,6 +81,7 @@ const handleAuthError = (error: any) => {
 authApi.interceptors.response.use((res) => res, handleAuthError);
 alunoApi.interceptors.response.use((res) => res, handleAuthError);
 adminApi.interceptors.response.use((res) => res, handleAuthError);
+instrutorApi.interceptors.response.use((res) => res, handleAuthError);
 
 const api = authApi;
 export default api;

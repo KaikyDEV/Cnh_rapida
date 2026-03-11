@@ -12,14 +12,25 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, usuario } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push('/login');
+        if (!isLoading) {
+            if (!isAuthenticated) {
+                router.push('/login');
+            } else if (usuario) {
+                const isInstrutorPath = window.location.pathname.startsWith('/instrutor');
+                const isAlunoPath = window.location.pathname.startsWith('/aluno');
+
+                if (usuario.role === 'Aluno' && isInstrutorPath) {
+                    router.push('/aluno');
+                } else if (usuario.role === 'Instrutor' && (isAlunoPath || window.location.pathname.startsWith('/home'))) {
+                    router.push('/instrutor');
+                }
+            }
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [isAuthenticated, isLoading, router, usuario]);
 
     if (isLoading) {
         return (

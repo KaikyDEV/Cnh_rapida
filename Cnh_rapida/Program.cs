@@ -37,7 +37,6 @@ builder.Services.ConfigureApplicationCookie(options =>
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return Task.CompletedTask;
         }
-
         context.Response.Redirect(context.RedirectUri);
         return Task.CompletedTask;
     };
@@ -49,7 +48,6 @@ builder.Services.ConfigureApplicationCookie(options =>
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
         }
-
         context.Response.Redirect(context.RedirectUri);
         return Task.CompletedTask;
     };
@@ -73,69 +71,80 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-
-// 🔥 Criar Roles e Admin automaticamente
-using (var scope = app.Services.CreateScope())
+// 🔥 Semear banco (Síncrono para garantir que os dados existam antes do login)
+try 
 {
-    var services = scope.ServiceProvider;
-
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<Usuario>>();
-
-    string[] roles = { "Admin", "Aluno", "Instrutor" };
-
-    foreach (var role in roles)
+    using (var scope = app.Services.CreateScope())
     {
-        if (!await roleManager.RoleExistsAsync(role))
+        var services = scope.ServiceProvider;
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = services.GetRequiredService<UserManager<Usuario>>();
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+
+        string[] roles = { "Admin", "Aluno", "Instrutor" };
+        foreach (var role in roles)
         {
-            await roleManager.CreateAsync(new IdentityRole(role));
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole(role));
         }
-    }
 
-    string adminEmail = "admin@cnhrapida.com.br";
-    string adminPassword = "Admin@123";
-
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-    if (adminUser == null)
-    {
-        var novoAdmin = new Usuario
+        // Aluno de Teste
+        var studentEmail = "aluno@cnhrapida.com.br";
+        var studentUser = await userManager.FindByEmailAsync(studentEmail);
+        if (studentUser == null)
         {
-            UserName = adminEmail,
-            Email = adminEmail,
-            EmailConfirmed = true,
-            NomeCompleto = "Administrador do Sistema"
-        };
+            studentUser = new Usuario { UserName = studentEmail, Email = studentEmail, NomeCompleto = "Aluno Teste", EmailConfirmed = true };
+            var result = await userManager.CreateAsync(studentUser, "Aluno@123");
+            if (result.Succeeded) await userManager.AddToRoleAsync(studentUser, "Aluno");
+        }
 
-        var resultado = await userManager.CreateAsync(novoAdmin, adminPassword);
-
-        if (resultado.Succeeded)
-            await userManager.AddToRoleAsync(novoAdmin, "Admin");
-        else
-            throw new Exception("Erro ao criar admin: " +
-                string.Join(" | ", resultado.Errors.Select(e => e.Description)));
-    }
-
-    string instrutorEmail = "instrutor@cnhrapida.com.br";
-    string instrutorPassword = "Instrutor@123";
-
-    var instrutorUser = await userManager.FindByEmailAsync(instrutorEmail);
-
-    if (instrutorUser == null)
-    {
-        var novoInstrutor = new Usuario
+        if (studentUser != null && !await dbContext.AlunoCnhStatus.AnyAsync(s => s.UsuarioId == studentUser.Id))
         {
-            UserName = instrutorEmail,
-            Email = instrutorEmail,
-            EmailConfirmed = true,
-            NomeCompleto = "Carlos Silva"
-        };
+            dbContext.AlunoCnhStatus.Add(new AlunoCnhStatus
+            {
+                UsuarioId = studentUser.Id,
+                ProcessoIniciadoDetran = true,
+                ExameMedicoRealizado = false,
+                UltimaAtualizacao = DateTime.UtcNow
+            });
+        }
 
-        var resultado = await userManager.CreateAsync(novoInstrutor, instrutorPassword);
+        // Instrutores e Perfis
+        var instrutorEmails = new[] { "instrutor@cnhrapida.com.br", "kaikysantosdasilva38@gmail.com" };
+        foreach (var email in instrutorEmails)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null && email == "instrutor@cnhrapida.com.br")
+            {
+                user = new Usuario { UserName = email, Email = email, NomeCompleto = "Carlos Silva", EmailConfirmed = true };
+                await userManager.CreateAsync(user, "Instrutor@123");
+            }
 
-        if (resultado.Succeeded)
-            await userManager.AddToRoleAsync(novoInstrutor, "Instrutor");
+            if (user != null)
+            {
+                if (!await userManager.IsInRoleAsync(user, "Instrutor"))
+                    await userManager.AddToRoleAsync(user, "Instrutor");
+
+                if (!await dbContext.PerfisInstrutor.AnyAsync(p => p.UsuarioId == user.Id))
+                {
+                    dbContext.PerfisInstrutor.Add(new PerfilInstrutor
+                    {
+                        UsuarioId = user.Id,
+                        Cnh = "12345678901",
+                        Categoria = "AB",
+                        RegistroDetran = "DET" + new Random().Next(1000, 9999),
+                        DataValidadeCnh = DateTime.UtcNow.AddYears(5),
+                        Ativo = true
+                    });
+                }
+            }
+        }
+        await dbContext.SaveChangesAsync();
     }
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Erro ao semear banco: " + ex.Message);
 }
 
 if (app.Environment.IsDevelopment())
@@ -148,7 +157,7 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();

@@ -40,12 +40,22 @@ export const authService = {
         }
 
         const infoResponse = await authApi.get<IdentityInfoResponse>('/manage/info');
+        
+        // 🔥 Mock de Role baseados no email para teste rápido
+        // Em produção, isso deve ser buscado de um endpoint do backend
+        let role: 'Aluno' | 'Instrutor' = 'Aluno';
+        if (infoResponse.data.email.includes('instrutor') || 
+            infoResponse.data.email.includes('ana@') || 
+            infoResponse.data.email.includes('ricardo@') ||
+            infoResponse.data.email === 'kaikysantosdasilva38@gmail.com') {
+            role = 'Instrutor';
+        }
 
         const usuario: Usuario = {
-            id: infoResponse.data.email,
+            id: infoResponse.data.email, // Por enquanto usamos o email como ID no frontend
             nomeCompleto: infoResponse.data.email.split('@')[0],
             email: infoResponse.data.email,
-            role: 'Aluno',
+            role: role,
             dataCriacao: new Date().toISOString(),
             dataNascimento: new Date().toISOString(),
             cpf: '',

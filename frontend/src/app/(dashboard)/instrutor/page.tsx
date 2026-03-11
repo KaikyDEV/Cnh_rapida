@@ -10,16 +10,24 @@ import { Plus, Settings, User, X, Star, Clock, Calendar } from 'lucide-react';
 import BlockScheduleModal from '@/components/booking/BlockScheduleModal';
 import Logo from '@/components/layout/Logo';
 
-// Days of week mock for the selector
-const diasSemana = [
-    { label: 'Dom', dia: 15 },
-    { label: 'Seg', dia: 16 },
-    { label: 'Ter', dia: 17 },
-    { label: 'Qua', dia: 18 },
-    { label: 'Qui', dia: 19 },
-    { label: 'Sex', dia: 20 },
-    { label: 'Sáb', dia: 21 },
-];
+// Helper to get day name
+const getDayLabel = (date: Date) => {
+    const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return labels[date.getDay()];
+};
+
+// Helper to get week dates
+const getWeekDates = (startDate: Date) => {
+    const dates = [];
+    const start = new Date(startDate);
+    start.setDate(start.getDate() - start.getDay()); // Start at Sunday
+
+    for (let i = 0; i < 7; i++) {
+        dates.push(new Date(start));
+        start.setDate(start.getDate() + 1);
+    }
+    return dates;
+};
 
 function getStatusForBadge(status: AgendaItem['status']): 'Agendada' | 'Realizada' | 'Cancelada' {
     if (status === 'Concluída') return 'Realizada';
@@ -28,20 +36,27 @@ function getStatusForBadge(status: AgendaItem['status']): 'Agendada' | 'Realizad
 
 export default function InstrutorPage() {
     const { usuario } = useAuth();
-    const [diaSelecionado, setDiaSelecionado] = useState(17);
+    const [dataSelecionada, setDataSelecionada] = useState(new Date());
+    const [inicioSemana, setInicioSemana] = useState(new Date());
     const [modalAberto, setModalAberto] = useState(false);
     const [agenda, setAgenda] = useState<AgendaItem[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const weekDates = getWeekDates(inicioSemana);
 
     useEffect(() => {
         async function fetchAgenda() {
             if (!usuario) return;
             try {
                 setLoading(true);
-                const data = await instrutorService.buscarAgenda(
-                    usuario.id,
-                    `2026-02-${diaSelecionado.toString().padStart(2, '0')}`
-                );
+                // Format YYYY-MM-DD
+                const year = dataSelecionada.getFullYear();
+                const month = (dataSelecionada.getMonth() + 1).toString().padStart(2, '0');
+                const day = dataSelecionada.getDate().toString().padStart(2, '0');
+                
+                const dataStr = `${year}-${month}-${day}`;
+                
+                const data = await instrutorService.buscarAgenda(usuario.id, dataStr);
                 setAgenda(data);
             } catch (error) {
                 console.error('Erro ao carregar agenda:', error);
@@ -51,7 +66,13 @@ export default function InstrutorPage() {
             }
         }
         fetchAgenda();
-    }, [usuario, diaSelecionado]);
+    }, [usuario, dataSelecionada]);
+
+    const navegarSemana = (offset: number) => {
+        const novaData = new Date(inicioSemana);
+        novaData.setDate(novaData.getDate() + (offset * 7));
+        setInicioSemana(novaData);
+    };
 
     return (
         <div className="max-w-6xl mx-auto animate-fade-in-up">
@@ -78,32 +99,45 @@ export default function InstrutorPage() {
                 {/* Main column — Agenda */}
                 <div className="space-y-5">
                     {/* Title + date */}
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-cnh-text-primary">Agenda de Hoje</h2>
-                        <span className="text-sm text-cnh-text-secondary flex items-center gap-1">
-                            <Calendar size={14} /> {diaSelecionado}/02/2026
-                        </span>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-cnh-text-primary">Agenda</h2>
+                            <span className="text-sm text-cnh-text-secondary flex items-center gap-1">
+                                <Calendar size={14} /> {dataSelecionada.toLocaleDateString('pt-BR')}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => navegarSemana(-1)} className="h-8 px-2 text-cnh-text-secondary">
+                                Anterior
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => navegarSemana(1)} className="h-8 px-2 text-cnh-text-secondary">
+                                Próximo
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Day selector */}
                     <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                        {diasSemana.map((d) => (
-                            <button
-                                key={d.dia}
-                                onClick={() => setDiaSelecionado(d.dia)}
-                                className={`
-                  flex flex-col items-center min-w-[52px] py-2 px-3 rounded-xl text-sm
-                  transition-all duration-150
-                  ${diaSelecionado === d.dia
-                                        ? 'bg-cnh-primary text-white shadow-md'
-                                        : 'bg-white text-cnh-text-secondary hover:bg-cnh-bg-base border border-cnh-border'
-                                    }
-                `}
-                            >
-                                <span className="text-xs font-medium">{d.label}</span>
-                                <span className="text-base font-bold mt-0.5">{d.dia}</span>
-                            </button>
-                        ))}
+                        {weekDates.map((d) => {
+                            const isSelected = d.toDateString() === dataSelecionada.toDateString();
+                            return (
+                                <button
+                                    key={d.toISOString()}
+                                    onClick={() => setDataSelecionada(new Date(d))}
+                                    className={`
+                      flex flex-col items-center min-w-[52px] py-2 px-3 rounded-xl text-sm
+                      transition-all duration-150
+                      ${isSelected
+                                            ? 'bg-cnh-primary text-white shadow-md'
+                                            : 'bg-white text-cnh-text-secondary hover:bg-cnh-bg-base border border-cnh-border'
+                                        }
+                    `}
+                                >
+                                    <span className="text-xs font-medium">{getDayLabel(d)}</span>
+                                    <span className="text-base font-bold mt-0.5">{d.getDate()}</span>
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Lesson list */}
