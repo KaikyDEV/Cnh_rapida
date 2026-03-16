@@ -110,7 +110,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", "http://72.62.15.46.nip.io")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -121,6 +121,8 @@ var app = builder.Build();
 
 // ✅ CORS para React
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
 // 🔥 Middleware de Erros Global
 app.UseMiddleware<ExceptionMiddleware>();
@@ -251,8 +253,7 @@ app.UseStaticFiles();
 // ✅ Routing
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+
 
 // 🔥 Identity Minimal API
 app.MapIdentityApi<Usuario>();
