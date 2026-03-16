@@ -17,7 +17,12 @@ export default function GoogleLoginButton() {
     const googleButtonRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const clientId = "574405519013-iqqcrf5kia3rgaj0cr47t6kth15hogsi.apps.googleusercontent.com";
+        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+        if (!clientId) {
+            console.error('Google Client ID not found in environment variables');
+            return;
+        }
 
         const handleCredentialResponse = async (response: any) => {
             try {
