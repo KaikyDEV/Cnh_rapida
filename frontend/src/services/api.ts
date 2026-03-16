@@ -3,8 +3,14 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
 // 🔥 Instância única centralizada
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5143';
+
+if (typeof window !== 'undefined') {
+    console.log('[API] Using baseURL:', baseURL);
+}
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5143',
+    baseURL,
     timeout: 30000,
     withCredentials: true,
     headers: {
