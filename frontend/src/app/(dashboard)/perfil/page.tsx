@@ -3,36 +3,43 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, Calendar, Pencil, Download, FileText, Trophy } from 'lucide-react';
-import Logo from '@/components/layout/Logo';
+import { Mail, Phone, Calendar, MapPin, Building2, ShieldCheck, ShieldAlert, Activity, Users, BookOpen } from 'lucide-react';
 import { alunoService, AulaPraticaResponse } from '@/services/alunoService';
+import { autoEscolaService } from '@/services/autoEscolaService';
 import { AlunoCnhStatus } from '@/types';
 
 export default function PerfilPage() {
     const { usuario } = useAuth();
     const [status, setStatus] = useState<AlunoCnhStatus | null>(null);
     const [aulas, setAulas] = useState<AulaPraticaResponse[]>([]);
+    const [perfilEscola, setPerfilEscola] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!usuario) return;
+
         async function fetchData() {
             try {
-                const [statusData, aulasData] = await Promise.all([
-                    alunoService.buscarStatus(),
-                    alunoService.buscarMinhasAulas(),
-                ]);
-                setStatus(statusData);
-                setAulas(aulasData);
+                if (usuario!.role === 'Aluno') {
+                    const [statusData, aulasData] = await Promise.all([
+                        alunoService.buscarStatus(),
+                        alunoService.buscarMinhasAulas(),
+                    ]);
+                    setStatus(statusData);
+                    setAulas(aulasData);
+                } else if (usuario!.role === 'AutoEscola') {
+                    const data = await autoEscolaService.getPerfil();
+                    setPerfilEscola(data);
+                }
             } catch (error) {
-                console.error('Erro ao carregar status:', error);
+                console.error('Erro ao carregar perfil:', error);
             } finally {
                 setLoading(false);
             }
         }
         fetchData();
-    }, []);
+    }, [usuario]);
 
     if (!usuario) return null;
 
@@ -44,147 +51,281 @@ export default function PerfilPage() {
         );
     }
 
-    const aulasRealizadas = aulas.filter(a => a.realizada).length;
+    if (usuario.role === 'AutoEscola') {
+        return <PerfilAutoEscola usuario={usuario} perfil={perfilEscola} />;
+    }
+
+    if (usuario.role === 'Instrutor') {
+        return <PerfilInstrutor usuario={usuario} />;
+    }
+
+    // Default: Aluno
+    return <PerfilAluno usuario={usuario} status={status} aulas={aulas} />;
+}
+
+// ===================================================================
+// PERFIL ALUNO
+// ===================================================================
+function PerfilAluno({ usuario, status, aulas }: { usuario: any, status: any, aulas: any[] }) {
+    const aulasRealizadas = aulas.filter(a => a.realizada || a.concluida).length;
+
+    const steps = [
+        { label: 'Conta Gov.br', done: status?.possuiContaGov },
+        { label: 'Processo DETRAN', done: status?.processoIniciadoDetran },
+        { label: 'Exames Enviados', done: status?.examesEnviados },
+        { label: 'Docs Aprovados', done: status?.documentosAprovados },
+        { label: 'Exame Médico', done: status?.exameMedicoAprovado },
+        { label: 'Exame Teórico', done: status?.exameTeoricoAprovado },
+        { label: 'Aulas Práticas', done: status?.aulasPraticasIniciadas },
+    ];
+
+    const totalDone = steps.filter(s => s.done).length;
+    const progress = Math.round((totalDone / steps.length) * 100);
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6">
-                {/* Profile Card */}
-                <Card className="p-6 rounded-xl border border-cnh-border text-center">
-                    <div className="w-20 h-20 rounded-full bg-cnh-primary-dark flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+                {/* Identity Card */}
+                <Card className="p-6 rounded-xl border border-cnh-border text-center space-y-4">
+                    <div className="w-20 h-20 rounded-full bg-cnh-primary/10 flex items-center justify-center text-cnh-primary font-bold text-2xl mx-auto">
                         {usuario.nomeCompleto.charAt(0).toUpperCase()}
                     </div>
-
-                    <h2 className="text-lg font-bold text-cnh-text-primary">{usuario.nomeCompleto}</h2>
-                    <Badge
-                        className={`mt-1 ${usuario.role === 'Aluno' ? 'bg-cnh-primary/10 text-cnh-primary' : 'bg-cnh-success/10 text-cnh-success'}`}
-                    >
-                        {usuario.role}
-                    </Badge>
-
-                    <div className="mt-5 space-y-3 text-left">
-                        <div className="flex items-center gap-2 text-sm">
-                            <Mail size={16} className="text-cnh-text-muted shrink-0" />
-                            <span className="text-cnh-text-secondary truncate">{usuario.email}</span>
+                    <div>
+                        <h2 className="text-lg font-bold text-cnh-text-primary">{usuario.nomeCompleto}</h2>
+                        <Badge className="mt-1 bg-cnh-primary/10 text-cnh-primary">Aluno</Badge>
+                    </div>
+                    <div className="space-y-2 text-left text-sm">
+                        <div className="flex items-center gap-2 text-cnh-text-secondary">
+                            <Mail size={15} className="text-cnh-text-muted shrink-0" />
+                            <span className="truncate">{usuario.email}</span>
                         </div>
                         {usuario.phoneNumber && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <Phone size={16} className="text-cnh-text-muted shrink-0" />
-                                <span className="text-cnh-text-secondary">{usuario.phoneNumber}</span>
+                            <div className="flex items-center gap-2 text-cnh-text-secondary">
+                                <Phone size={15} className="text-cnh-text-muted shrink-0" />
+                                <span>{usuario.phoneNumber}</span>
                             </div>
                         )}
-                        <div className="flex items-center gap-2 text-sm">
-                            <Calendar size={16} className="text-cnh-text-muted shrink-0" />
-                            <span className="text-cnh-text-secondary">
-                                Início: {new Date(usuario.dataCriacao).toLocaleDateString('pt-BR')}
-                            </span>
+                        <div className="flex items-center gap-2 text-cnh-text-secondary">
+                            <Calendar size={15} className="text-cnh-text-muted shrink-0" />
+                            <span>Cadastro: {new Date(usuario.dataCriacao).toLocaleDateString('pt-BR')}</span>
                         </div>
                     </div>
-
-                    <Button variant="outline" className="w-full mt-5 border-cnh-border">
-                        <Pencil size={14} className="mr-2" />
-                        Editar Perfil
-                    </Button>
+                    {status?.autoEscolaNome && (
+                        <div className="text-xs text-center px-3 py-2 bg-cnh-background rounded-lg text-cnh-text-secondary">
+                            <Building2 size={12} className="inline mr-1" />
+                            {status.autoEscolaNome}
+                        </div>
+                    )}
                 </Card>
 
-                {/* Certificate */}
-                <Card className="rounded-xl border border-cnh-border overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-cnh-border">
-                        <h3 className="font-bold text-cnh-text-primary">Certificado de Conclusão</h3>
-                        <Button variant="outline" size="sm" className="border-cnh-border">
-                            <Download size={14} className="mr-1" />
-                            Baixar
-                        </Button>
+                {/* Progress */}
+                <Card className="p-6 rounded-xl border border-cnh-border space-y-5">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-cnh-text-primary flex items-center gap-2">
+                            <Activity size={18} className="text-cnh-primary" />
+                            Progresso CNH
+                        </h3>
+                        <span className="text-sm font-bold text-cnh-primary">{progress}%</span>
                     </div>
-
-                    <div className="p-6 bg-white">
-                        <div className="border border-cnh-border rounded-lg p-6 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Logo size="sm" />
-                                <div className="text-right text-xs text-cnh-text-muted">
-                                    <p className="font-semibold text-cnh-text-secondary">DETRAN-SP</p>
-                                    <p>Departamento Estadual de Trânsito</p>
-                                </div>
+                    <div className="w-full h-2.5 bg-cnh-background rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-cnh-primary rounded-full transition-all duration-700"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                        {steps.map((step) => (
+                            <div key={step.label}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm ${step.done
+                                    ? 'bg-green-50 border-green-100 text-green-800'
+                                    : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
+                                {step.done
+                                    ? <ShieldCheck size={16} className="text-green-500 shrink-0" />
+                                    : <ShieldAlert size={16} className="text-gray-400 shrink-0" />}
+                                {step.label}
                             </div>
-
-                            <div className="h-1 bg-gradient-to-r from-cnh-primary to-cnh-primary-light rounded-full" />
-
-                            <div className="text-center py-4">
-                                <h4 className="text-lg font-bold text-cnh-text-primary mb-3">
-                                    Certificado de Conclusão
-                                </h4>
-                                <p className="text-sm text-cnh-text-secondary mb-1">Certificamos que</p>
-                                <p className="text-xl font-bold text-cnh-primary mb-2">{usuario.nomeCompleto}</p>
-                                <p className="text-sm text-cnh-text-secondary">
-                                    Concluiu com êxito o curso de formação de condutores
-                                </p>
-                                <p className="text-sm font-semibold text-cnh-text-primary mt-1">
-                                    Categoria B
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 bg-cnh-bg-base rounded-lg p-4 text-sm">
-                                <div>
-                                    <p className="text-xs text-cnh-text-muted">CPF</p>
-                                    <p className="font-medium text-cnh-text-primary">{usuario.cpf}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-cnh-text-muted">RG</p>
-                                    <p className="font-medium text-cnh-text-primary">12.345.678-9</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-cnh-text-muted">Aulas Práticas</p>
-                                    <p className="font-medium text-cnh-text-primary">{aulasRealizadas}/25</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-cnh-text-muted">Data de Conclusão</p>
-                                    <p className="font-medium text-cnh-warning">Em progresso</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between pt-2 text-xs">
-                                <div className="flex items-center gap-1.5 text-cnh-success">
-                                    <Trophy size={14} />
-                                    <span className="font-semibold">Certificado Válido</span>
-                                </div>
-                                <span className="text-cnh-text-muted">Emitido em 17/02/2026</span>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </Card>
             </div>
 
-            {/* Documentos */}
-            <Card className="rounded-xl border border-cnh-border">
-                <div className="px-5 py-4 border-b border-cnh-border">
-                    <h3 className="font-bold text-cnh-text-primary">Documentos</h3>
-                </div>
-                <div className="divide-y divide-cnh-border">
-                    {[
-                        { nome: 'Comprovante de Matrícula', tamanho: '245 KB' },
-                        { nome: 'Histórico de Aulas', tamanho: '180 KB' },
-                        { nome: 'Certificado de Conclusão Teórica', tamanho: '320 KB' },
-                        ...(status?.caminhoExameMedico
-                            ? [{ nome: 'Laudo Médico', tamanho: '156 KB' }]
-                            : []),
-                    ].map((doc) => (
-                        <div key={doc.nome} className="flex items-center justify-between px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center">
-                                    <FileText size={16} className="text-red-500" />
+            {/* Aulas */}
+            <Card className="p-6 rounded-xl border border-cnh-border">
+                <h3 className="font-bold text-cnh-text-primary flex items-center gap-2 mb-4">
+                    <BookOpen size={18} className="text-cnh-primary" />
+                    Aulas Práticas — {aulasRealizadas} realizadas
+                </h3>
+                {aulas.length === 0 ? (
+                    <p className="text-cnh-text-muted text-sm text-center py-6">Nenhuma aula agendada ainda.</p>
+                ) : (
+                    <div className="divide-y divide-cnh-background">
+                        {aulas.map((aula: any) => (
+                            <div key={aula.id} className="flex items-center justify-between py-3">
+                                <div className="text-sm">
+                                    <p className="font-medium text-cnh-text-primary">
+                                        {new Date(aula.data || aula.dataHora).toLocaleDateString('pt-BR')}
+                                    </p>
+                                    <p className="text-cnh-text-muted">{aula.quantidadeHoras}h</p>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-cnh-text-primary">{doc.nome}</p>
-                                    <p className="text-xs text-cnh-text-muted">PDF, {doc.tamanho}</p>
-                                </div>
+                                <Badge className={aula.realizada || aula.concluida
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'}>
+                                    {aula.realizada || aula.concluida ? 'Realizada' : 'Agendada'}
+                                </Badge>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-cnh-text-muted hover:text-cnh-primary">
-                                <Download size={16} />
-                            </Button>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </Card>
+        </div>
+    );
+}
+
+// ===================================================================
+// PERFIL AUTO ESCOLA
+// ===================================================================
+function PerfilAutoEscola({ usuario, perfil }: { usuario: any, perfil: any }) {
+    return (
+        <div className="max-w-4xl mx-auto space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+                {/* Identity */}
+                <Card className="p-6 rounded-xl border border-cnh-border text-center space-y-4">
+                    <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-2xl mx-auto">
+                        {(perfil?.nomeFantasia || usuario.nomeCompleto).charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold text-cnh-text-primary">
+                            {perfil?.nomeFantasia || usuario.nomeCompleto}
+                        </h2>
+                        <Badge className="mt-1 bg-blue-100 text-blue-700">Auto Escola</Badge>
+                    </div>
+                    <div className="space-y-2 text-left text-sm">
+                        <div className="flex items-center gap-2 text-cnh-text-secondary">
+                            <Mail size={15} className="text-cnh-text-muted shrink-0" />
+                            <span className="truncate">{usuario.email}</span>
+                        </div>
+                        {perfil?.cidade && (
+                            <div className="flex items-center gap-2 text-cnh-text-secondary">
+                                <MapPin size={15} className="text-cnh-text-muted shrink-0" />
+                                <span>{perfil.cidade}</span>
+                            </div>
+                        )}
+                        {perfil?.endereco && (
+                            <div className="flex items-start gap-2 text-cnh-text-secondary">
+                                <Building2 size={15} className="text-cnh-text-muted shrink-0 mt-0.5" />
+                                <span>{perfil.endereco}</span>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
+                {/* Dados da Escola */}
+                <Card className="p-6 rounded-xl border border-cnh-border space-y-5">
+                    <h3 className="font-bold text-cnh-text-primary flex items-center gap-2">
+                        <Building2 size={18} className="text-cnh-primary" />
+                        Dados da Auto Escola
+                    </h3>
+                    {perfil ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <InfoItem label="CNPJ" value={perfil.cnpj || '—'} />
+                            <InfoItem label="Cidade" value={perfil.cidade || '—'} />
+                            <InfoItem label="Endereço" value={perfil.endereco || '—'} />
+                            <InfoItem label="Status Documentos"
+                                value={perfil.documentosAprovados ? 'Aprovados ✅' : 'Pendente ⏳'} />
+                        </div>
+                    ) : (
+                        <p className="text-cnh-text-muted text-sm">Carregando dados...</p>
+                    )}
+
+                    <div className={`mt-4 px-4 py-3 rounded-xl flex items-center gap-3 ${perfil?.documentosAprovados
+                        ? 'bg-green-50 border border-green-100'
+                        : 'bg-yellow-50 border border-yellow-100'}`}>
+                        {perfil?.documentosAprovados
+                            ? <ShieldCheck className="text-green-500" size={20} />
+                            : <ShieldAlert className="text-yellow-500" size={20} />}
+                        <p className="text-sm font-medium">
+                            {perfil?.documentosAprovados
+                                ? 'Todos os documentos foram aprovados. Sua conta está ativa!'
+                                : 'Seus documentos ainda estão em análise. Aguarde a aprovação.'}
+                        </p>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Quick Links */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card className="p-5 rounded-xl border border-cnh-border flex items-center gap-4">
+                    <div className="w-12 h-12 bg-cnh-primary/10 rounded-xl flex items-center justify-center">
+                        <Users size={22} className="text-cnh-primary" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-cnh-text-primary">Gerenciar Alunos</p>
+                        <p className="text-xs text-cnh-text-muted">Vincule e acompanhe seus alunos</p>
+                    </div>
+                </Card>
+                <Card className="p-5 rounded-xl border border-cnh-border flex items-center gap-4">
+                    <div className="w-12 h-12 bg-cnh-primary/10 rounded-xl flex items-center justify-center">
+                        <Activity size={22} className="text-cnh-primary" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-cnh-text-primary">Gerenciar Instrutores</p>
+                        <p className="text-xs text-cnh-text-muted">Vincule e gerencie sua equipe</p>
+                    </div>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
+// ===================================================================
+// PERFIL INSTRUTOR
+// ===================================================================
+function PerfilInstrutor({ usuario }: { usuario: any }) {
+    return (
+        <div className="max-w-4xl mx-auto space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+                <Card className="p-6 rounded-xl border border-cnh-border text-center space-y-4">
+                    <div className="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-2xl mx-auto">
+                        {usuario.nomeCompleto.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold text-cnh-text-primary">{usuario.nomeCompleto}</h2>
+                        <Badge className="mt-1 bg-purple-100 text-purple-700">Instrutor</Badge>
+                    </div>
+                    <div className="space-y-2 text-left text-sm">
+                        <div className="flex items-center gap-2 text-cnh-text-secondary">
+                            <Mail size={15} className="text-cnh-text-muted shrink-0" />
+                            <span className="truncate">{usuario.email}</span>
+                        </div>
+                        {usuario.phoneNumber && (
+                            <div className="flex items-center gap-2 text-cnh-text-secondary">
+                                <Phone size={15} className="text-cnh-text-muted shrink-0" />
+                                <span>{usuario.phoneNumber}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 text-cnh-text-secondary">
+                            <Calendar size={15} className="text-cnh-text-muted shrink-0" />
+                            <span>Cadastro: {new Date(usuario.dataCriacao).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                    </div>
+                </Card>
+                <Card className="p-6 rounded-xl border border-cnh-border flex items-center justify-center">
+                    <div className="text-center text-cnh-text-muted">
+                        <Activity size={40} className="mx-auto mb-3 opacity-20" />
+                        <p className="text-sm">Informações detalhadas disponíveis na sua auto escola.</p>
+                    </div>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
+// Componente auxiliar
+function InfoItem({ label, value }: { label: string, value: string }) {
+    return (
+        <div className="p-3 bg-cnh-background/50 rounded-xl">
+            <p className="text-[10px] font-bold uppercase text-cnh-text-muted mb-1">{label}</p>
+            <p className="text-sm font-semibold text-cnh-text-primary">{value}</p>
         </div>
     );
 }

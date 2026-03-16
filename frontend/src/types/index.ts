@@ -9,7 +9,9 @@ export interface Usuario {
   dataNascimento: string;        // ISO date string
   cpf: string;
   dataCriacao: string;           // ISO datetime
-  role: 'Aluno' | 'Instrutor';  // derivado do Identity Role
+  role: 'Aluno' | 'Instrutor' | 'Admin' | 'AutoEscola';  // derivado do Identity Role
+  documentosAprovados: boolean;
+  perfilIncompleto: boolean;
   nomeOuEmail: string;           // computed: nomeCompleto ?? email
 }
 
@@ -39,8 +41,12 @@ export interface AlunoCnhStatus {
   aulasPraticasIniciadas: boolean;
   aulasPraticas: AulaPratica[];
 
+  // Auto Escola vinculada
+  autoEscolaId?: number;
+
   // Sistema
   primeiroAcesso: boolean;
+  documentosAprovados: boolean;
   ultimaAtualizacao: string;     // ISO datetime
 }
 

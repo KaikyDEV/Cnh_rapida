@@ -10,9 +10,10 @@ interface AuthContextType {
     usuario: Usuario | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    role: 'Aluno' | 'Instrutor' | null;
-    login: (data: LoginFormData) => Promise<void>;
+    role: 'Aluno' | 'Instrutor' | 'Admin' | 'AutoEscola' | null;
+    login: (data: LoginFormData) => Promise<{ usuario: Usuario; token: string }>;
     cadastro: (data: CadastroFormData) => Promise<void>;
+    googleLogin: (credential: string) => Promise<{ usuario: Usuario; token: string; perfilIncompleto: boolean }>;
     logout: () => Promise<void>;
 }
 
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsuario(result.usuario);
         localStorage.setItem('cnhrapido_user', JSON.stringify(result.usuario));
         localStorage.setItem('cnhrapido_token', result.token);
+        return result;
     }, []);
 
     const cadastro = useCallback(async (data: CadastroFormData) => {
@@ -50,6 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsuario(result.usuario);
         localStorage.setItem('cnhrapido_user', JSON.stringify(result.usuario));
         localStorage.setItem('cnhrapido_token', result.token);
+    }, []);
+
+    const googleLogin = useCallback(async (credential: string) => {
+        const result = await authService.googleLogin(credential);
+        setUsuario(result.usuario);
+        localStorage.setItem('cnhrapido_user', JSON.stringify(result.usuario));
+        localStorage.setItem('cnhrapido_token', result.token);
+        return result;
     }, []);
 
     const logout = useCallback(async () => {
@@ -66,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: usuario?.role ?? null,
                 login,
                 cadastro,
+                googleLogin,
                 logout,
             }}
         >

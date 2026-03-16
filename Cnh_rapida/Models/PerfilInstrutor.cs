@@ -11,6 +11,9 @@ public class PerfilInstrutor
 
     public Usuario Usuario { get; set; } = null!;
 
+    public int? AutoEscolaId { get; set; }
+    public virtual AutoEscola? AutoEscola { get; set; }
+
     // CNH profissional
     [Required]
     [StringLength(11, MinimumLength = 11)]
@@ -40,4 +43,6 @@ public class PerfilInstrutor
     // Observações administrativas
     [MaxLength(500)]
     public string? Observacoes { get; set; }
+
+    public bool DocumentosAprovados { get; set; } = false;
 }

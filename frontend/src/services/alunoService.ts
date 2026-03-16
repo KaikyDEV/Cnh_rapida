@@ -11,13 +11,13 @@ export interface AulaPraticaResponse {
 export const alunoService = {
     // Busca status do aluno
     async buscarStatus(): Promise<AlunoCnhStatus> {
-        const response = await alunoApi.get<AlunoCnhStatus>('/status');
+        const response = await alunoApi.get<AlunoCnhStatus>('/api/aluno/status');
         return response.data;
     },
 
     // Agendar Aula Prática
     async agendarAula(data: string, horas: number, instrutorId?: string | null) {
-        const response = await alunoApi.post('/agendar-aula', {
+        const response = await alunoApi.post('/api/aluno/agendar-aula', {
             data,
             horas,
             instrutorId
@@ -27,7 +27,7 @@ export const alunoService = {
 
     // Buscar TODAS as aulas do aluno
     async buscarMinhasAulas(): Promise<AulaPraticaResponse[]> {
-        const response = await alunoApi.get<AulaPraticaResponse[]>('/minhas-aulas');
+        const response = await alunoApi.get<AulaPraticaResponse[]>('/api/aluno/minhas-aulas');
         return response.data;
     },
 

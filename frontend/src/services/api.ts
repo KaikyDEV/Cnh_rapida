@@ -2,48 +2,21 @@
 // Cnh_rapida/frontend/src/services/api.ts
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-// Módulo de Autenticação (Identity Minimal API)
-export const authApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:5143',
+// 🔥 Instância única centralizada
+const api = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5143',
     timeout: 30000,
-    withCredentials: true, // Importante se o backend usar cookies de autenticação
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
-// Módulo do Aluno
-export const alunoApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_ALUNO_URL || 'http://localhost:5143/api/aluno',
-    timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
-// Módulo do Admin
-export const adminApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:5143/api/admin',
-    timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
-// Módulo do Instrutor
-export const instrutorApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_INSTRUTOR_URL || 'http://localhost:5143/api/instrutor',
-    timeout: 30000,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
 /**
- * Interceptor de Request Compartilhado
+ * Interceptor de Request
  * Adiciona o Bearer Token em todas as requisições se disponível
  */
-const addAuthToken = (config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
         const token = localStorage.getItem('cnhrapido_token');
         if (token) {
@@ -51,37 +24,35 @@ const addAuthToken = (config: InternalAxiosRequestConfig) => {
         }
     }
     return config;
-};
-
-authApi.interceptors.request.use(addAuthToken);
-alunoApi.interceptors.request.use(addAuthToken);
-adminApi.interceptors.request.use(addAuthToken);
-instrutorApi.interceptors.request.use(addAuthToken);
+});
 
 /**
- * Interceptor de Response Compartilhado
- * Trata erros 401 (não autorizado)
+ * Interceptor de Response
+ * Trata erros 401 (não autorizado) globalmente
  */
-const handleAuthError = (error: any) => {
-    if (error.response?.status === 401) {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('cnhrapido_token');
-            localStorage.removeItem('cnhrapido_user');
+api.interceptors.response.use(
+    (res) => res,
+    (error: any) => {
+        if (error.response?.status === 401) {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('cnhrapido_token');
+                localStorage.removeItem('cnhrapido_user');
 
-            // Redireciona para o login se não já estivermos em uma página pública
-            const publicPaths = ['/login', '/cadastro'];
-            if (!publicPaths.includes(window.location.pathname)) {
-                window.location.href = '/login';
+                const publicPaths = ['/login', '/cadastro'];
+                if (!publicPaths.includes(window.location.pathname)) {
+                    window.location.href = '/login';
+                }
             }
         }
+        return Promise.reject(error);
     }
-    return Promise.reject(error);
-};
+);
 
-authApi.interceptors.response.use((res) => res, handleAuthError);
-alunoApi.interceptors.response.use((res) => res, handleAuthError);
-adminApi.interceptors.response.use((res) => res, handleAuthError);
-instrutorApi.interceptors.response.use((res) => res, handleAuthError);
+// Aliases para manter compatibilidade com os services existentes
+export const authApi = api;
+export const alunoApi = api;
+export const adminApi = api;
+export const instrutorApi = api;
+export const autoEscolaApi = api;
 
-const api = authApi;
 export default api;

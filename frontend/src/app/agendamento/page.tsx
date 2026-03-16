@@ -119,9 +119,9 @@ function BookingWizardContent() {
                                     );
                                     alert('Aula agendada com sucesso! 🎉');
                                     window.location.href = '/aluno';
-                                } catch (error) {
-                                    console.error('Erro ao agendar:', error);
-                                    alert('Erro ao agendar aula. Tente novamente.');
+                                } catch (error: any) {
+                                    const msg = error?.response?.data?.message || 'Erro ao agendar aula. Tente novamente.';
+                                    alert(msg);
                                 }
                             }}
                         />

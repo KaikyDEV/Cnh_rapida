@@ -1,4 +1,4 @@
-﻿namespace Cnh_rapida.Models;
+namespace Cnh_rapida.Models;
 
 public class AlunoCnhStatus
 {
@@ -6,6 +6,9 @@ public class AlunoCnhStatus
 
     public string UsuarioId { get; set; } = string.Empty;
     public virtual Usuario Usuario { get; set; } = null!;
+
+    public int? AutoEscolaId { get; set; }
+    public virtual AutoEscola? AutoEscola { get; set; }
 
     public bool PossuiContaGov { get; set; } = false;
     public bool ProcessoIniciadoDetran { get; set; } = false;
@@ -28,6 +31,8 @@ public class AlunoCnhStatus
     public bool ExameTeoricoAprovado { get; set; } = false;
     public string? CaminhoExameTeorico { get; set; }
     public DateTime? DataEnvioExameTeorico { get; set; }
+
+    public bool DocumentosAprovados { get; set; } = false;
 
     public DateTime UltimaAtualizacao { get; set; } = DateTime.UtcNow;
 

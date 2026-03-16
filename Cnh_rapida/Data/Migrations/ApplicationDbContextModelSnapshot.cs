@@ -33,6 +33,9 @@ namespace Cnh_rapida.Data.Migrations
                     b.Property<bool>("AulasPraticasIniciadas")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("AutoEscolaId")
+                        .HasColumnType("int");
+
                     b.Property<string>("CaminhoExameMedico")
                         .HasColumnType("nvarchar(max)");
 
@@ -47,6 +50,9 @@ namespace Cnh_rapida.Data.Migrations
 
                     b.Property<DateTime?>("DataEnvioExames")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("DocumentosAprovados")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("ExameMedicoAprovado")
                         .HasColumnType("bit");
@@ -81,6 +87,8 @@ namespace Cnh_rapida.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AutoEscolaId");
+
                     b.HasIndex("UsuarioId")
                         .IsUnique();
 
@@ -96,9 +104,6 @@ namespace Cnh_rapida.Data.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AlunoCnhStatusId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("AlunoCnhStatusId1")
                         .HasColumnType("int");
 
                     b.Property<bool>("Aprovada")
@@ -129,11 +134,105 @@ namespace Cnh_rapida.Data.Migrations
 
                     b.HasIndex("AlunoCnhStatusId");
 
-                    b.HasIndex("AlunoCnhStatusId1");
-
                     b.HasIndex("InstrutorPerfilId");
 
                     b.ToTable("AulasPraticas");
+                });
+
+            modelBuilder.Entity("Cnh_rapida.Models.AutoEscola", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CNPJ")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Cidade")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("DocumentosAprovados")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EmailContato")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Endereco")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Estado")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NomeFantasia")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("RazaoSocial")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Telefone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("AutoEscolas");
+                });
+
+            modelBuilder.Entity("Cnh_rapida.Models.DocumentoUsuario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DataUpload")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Observacao")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoDocumento")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UrlArquivo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("DocumentosUsuario");
                 });
 
             modelBuilder.Entity("Cnh_rapida.Models.PerfilInstrutor", b =>
@@ -146,6 +245,9 @@ namespace Cnh_rapida.Data.Migrations
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("AutoEscolaId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Categoria")
                         .IsRequired()
@@ -162,6 +264,9 @@ namespace Cnh_rapida.Data.Migrations
                     b.Property<DateTime>("DataValidadeCnh")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("DocumentosAprovados")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Observacoes")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -177,6 +282,8 @@ namespace Cnh_rapida.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AutoEscolaId");
+
                     b.HasIndex("UsuarioId")
                         .IsUnique();
 
@@ -191,8 +298,10 @@ namespace Cnh_rapida.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("AutoEscolaId")
+                        .HasColumnType("int");
+
                     b.Property<string>("CPF")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -202,7 +311,7 @@ namespace Cnh_rapida.Data.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DataNascimento")
+                    b.Property<DateTime?>("DataNascimento")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -254,6 +363,8 @@ namespace Cnh_rapida.Data.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AutoEscolaId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -401,11 +512,18 @@ namespace Cnh_rapida.Data.Migrations
 
             modelBuilder.Entity("Cnh_rapida.Models.AlunoCnhStatus", b =>
                 {
+                    b.HasOne("Cnh_rapida.Models.AutoEscola", "AutoEscola")
+                        .WithMany("Alunos")
+                        .HasForeignKey("AutoEscolaId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Cnh_rapida.Models.Usuario", "Usuario")
                         .WithOne("AlunoCnhStatus")
                         .HasForeignKey("Cnh_rapida.Models.AlunoCnhStatus", "UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("AutoEscola");
 
                     b.Navigation("Usuario");
                 });
@@ -413,14 +531,10 @@ namespace Cnh_rapida.Data.Migrations
             modelBuilder.Entity("Cnh_rapida.Models.AulaPratica", b =>
                 {
                     b.HasOne("Cnh_rapida.Models.AlunoCnhStatus", "AlunoStatus")
-                        .WithMany()
+                        .WithMany("AulasPraticas")
                         .HasForeignKey("AlunoCnhStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Cnh_rapida.Models.AlunoCnhStatus", null)
-                        .WithMany("AulasPraticas")
-                        .HasForeignKey("AlunoCnhStatusId1");
 
                     b.HasOne("Cnh_rapida.Models.PerfilInstrutor", "Instrutor")
                         .WithMany()
@@ -432,15 +546,54 @@ namespace Cnh_rapida.Data.Migrations
                     b.Navigation("Instrutor");
                 });
 
+            modelBuilder.Entity("Cnh_rapida.Models.AutoEscola", b =>
+                {
+                    b.HasOne("Cnh_rapida.Models.Usuario", "Usuario")
+                        .WithOne()
+                        .HasForeignKey("Cnh_rapida.Models.AutoEscola", "UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Cnh_rapida.Models.DocumentoUsuario", b =>
+                {
+                    b.HasOne("Cnh_rapida.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("Cnh_rapida.Models.PerfilInstrutor", b =>
                 {
+                    b.HasOne("Cnh_rapida.Models.AutoEscola", "AutoEscola")
+                        .WithMany("Instrutores")
+                        .HasForeignKey("AutoEscolaId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Cnh_rapida.Models.Usuario", "Usuario")
                         .WithOne()
                         .HasForeignKey("Cnh_rapida.Models.PerfilInstrutor", "UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("AutoEscola");
+
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Cnh_rapida.Models.Usuario", b =>
+                {
+                    b.HasOne("Cnh_rapida.Models.AutoEscola", "AutoEscola")
+                        .WithMany()
+                        .HasForeignKey("AutoEscolaId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("AutoEscola");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -497,6 +650,13 @@ namespace Cnh_rapida.Data.Migrations
             modelBuilder.Entity("Cnh_rapida.Models.AlunoCnhStatus", b =>
                 {
                     b.Navigation("AulasPraticas");
+                });
+
+            modelBuilder.Entity("Cnh_rapida.Models.AutoEscola", b =>
+                {
+                    b.Navigation("Alunos");
+
+                    b.Navigation("Instrutores");
                 });
 
             modelBuilder.Entity("Cnh_rapida.Models.Usuario", b =>

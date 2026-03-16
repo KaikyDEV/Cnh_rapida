@@ -39,8 +39,11 @@ export default function LoginForm() {
         setError(null);
         setIsSubmitting(true);
         try {
-            await login(data);
-            router.push('/home');
+            const result = await login(data);
+            if (result.usuario.role === 'Admin') router.push('/admin/documentos');
+            else if (result.usuario.role === 'Instrutor') router.push('/instrutor');
+            else if (result.usuario.role === 'AutoEscola') router.push('/auto-escola');
+            else router.push('/home');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erro ao fazer login');
         } finally {

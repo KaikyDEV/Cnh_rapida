@@ -21,5 +21,6 @@ export const mockAlunoCnhStatus: AlunoCnhStatus = {
     aulasPraticasIniciadas: true,
     aulasPraticas: mockAulasPraticas,
     primeiroAcesso: false,
+    documentosAprovados: true,
     ultimaAtualizacao: "2025-02-17T08:00:00"
 };

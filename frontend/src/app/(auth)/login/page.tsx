@@ -1,5 +1,6 @@
 import Logo from '@/components/layout/Logo';
 import LoginForm from '@/components/auth/LoginForm';
+import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 
 export default function LoginPage() {
     return (
@@ -22,6 +23,21 @@ export default function LoginPage() {
 
                     {/* Form */}
                     <LoginForm />
+
+                    <div className="mt-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-cnh-border"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white text-cnh-text-muted">Ou continue com</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <GoogleLoginButton />
+                        </div>
+                    </div>
                 </div>
             </div>
 

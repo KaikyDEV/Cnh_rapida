@@ -46,6 +46,7 @@ public class InstrutorController : ControllerBase
             .Where(a => a.Data >= dataInicio && a.Data < dataFim)
             .Select(a => new
             {
+                Id = a.Id,
                 Data = a.Data,
                 NomeAluno = a.AlunoStatus.Usuario.NomeCompleto,
                 Status = a.Realizada ? "Concluída" : "Agendada",
@@ -56,6 +57,7 @@ public class InstrutorController : ControllerBase
         // Formatação final na memória
         var agenda = aulas.Select(a => new
         {
+            id = a.Id,
             horario = a.Data.ToString("HH:mm"),
             nomeAluno = a.NomeAluno,
             status = a.Status,
@@ -63,6 +65,61 @@ public class InstrutorController : ControllerBase
         }).ToList();
 
         return Ok(agenda);
+    }
+
+    [HttpPost("concluir-aula/{id}")]
+    public async Task<IActionResult> ConcluirAula(int id)
+    {
+        var aula = await _context.AulasPraticas.FindAsync(id);
+        if (aula == null) return NotFound(new { message = "Aula não encontrada" });
+
+        aula.Realizada = true;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Aula concluída com sucesso" });
+    }
+
+    [HttpPost("cancelar-aula/{id}")]
+    public async Task<IActionResult> CancelarAula(int id)
+    {
+        var aula = await _context.AulasPraticas.FindAsync(id);
+        if (aula == null) return NotFound(new { message = "Aula não encontrada" });
+
+        _context.AulasPraticas.Remove(aula);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Aula cancelada com sucesso" });
+    }
+
+    [HttpGet("todas-aulas")]
+    public async Task<IActionResult> TodasAulas(string instrutorId)
+    {
+        var query = _context.AulasPraticas.AsQueryable();
+
+        if (instrutorId.Contains("@"))
+        {
+            query = query.Where(a => a.Instrutor.Usuario.Email == instrutorId);
+        }
+        else
+        {
+            query = query.Where(a => a.Instrutor.UsuarioId == instrutorId);
+        }
+
+        var aulas = await query
+            .OrderByDescending(a => a.Data)
+            .Select(a => new
+            {
+                Id = a.Id,
+                Data = a.Data,
+                NomeAluno = a.AlunoStatus.Usuario.NomeCompleto,
+                Status = a.Realizada ? "Concluída" : "Agendada",
+                TipoAula = "Prática",
+                Horario = a.Data.ToString("HH:mm"),
+                DataFormatada = a.Data.ToString("dd/MM/yyyy")
+            })
+            .ToListAsync();
+
+        return Ok(aulas);
     }
 
     [HttpPost("bloquear-horario")]

@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 [ApiController]
 [Route("api/aluno")]
-[Authorize(Roles = "Aluno")]
+[Authorize]
 public class AlunoController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -22,6 +22,7 @@ public class AlunoController : ControllerBase
     }
 
     // 🔎 Buscar status
+    [Authorize(Roles = "Aluno")]
     [HttpGet("status")]
     public async Task<IActionResult> Status()
     {
@@ -35,10 +36,26 @@ public class AlunoController : ControllerBase
         if (status == null)
             return NotFound(new { message = "Status não encontrado" });
 
-        return Ok(status);
+        return Ok(new
+        {
+            status.Id,
+            status.PossuiContaGov,
+            status.ProcessoIniciadoDetran,
+            status.ExameMedicoRealizado,
+            status.ExameTeoricoRealizado,
+            status.AulasPraticasIniciadas,
+            status.PrimeiroAcesso,
+            status.ExamesEnviados,
+            status.ExameMedicoAprovado,
+            status.ExameTeoricoAprovado,
+            status.DocumentosAprovados,
+            status.UltimaAtualizacao,
+            status.UsuarioId
+        });
     }
 
     // 📅 Agendar aula
+    [Authorize(Roles = "Aluno")]
     [HttpPost("agendar-aula")]
     public async Task<IActionResult> AgendarAula([FromBody] AgendarAulaDto dto)
     {
@@ -53,6 +70,10 @@ public class AlunoController : ControllerBase
         if (status == null)
             return NotFound(new { message = "Status não encontrado" });
 
+        // 🔒 Aluno deve ter documentos aprovados
+        if (!status.DocumentosAprovados)
+            return BadRequest(new { message = "Você precisa ter seus documentos aprovados antes de agendar aulas práticas." });
+
         var aula = new AulaPratica
         {
             AlunoCnhStatusId = status.Id,
@@ -65,11 +86,15 @@ public class AlunoController : ControllerBase
         {
             var perfil = await _context.PerfisInstrutor
                 .FirstOrDefaultAsync(p => p.UsuarioId == dto.InstrutorId);
-            
-            if (perfil != null)
-            {
-                aula.InstrutorPerfilId = perfil.Id;
-            }
+
+            if (perfil == null)
+                return BadRequest(new { message = "Instrutor não encontrado." });
+
+            // 🔒 Instrutor deve ter documentos aprovados
+            if (!perfil.DocumentosAprovados)
+                return BadRequest(new { message = "O instrutor selecionado ainda não teve seus documentos aprovados. Por favor, escolha outro instrutor." });
+
+            aula.InstrutorPerfilId = perfil.Id;
         }
 
         _context.AulasPraticas.Add(aula);
@@ -79,6 +104,7 @@ public class AlunoController : ControllerBase
     }
 
     // 📋 Listar aulas
+    [Authorize(Roles = "Aluno")]
     [HttpGet("minhas-aulas")]
     public async Task<IActionResult> MinhasAulas()
     {
@@ -104,6 +130,7 @@ public class AlunoController : ControllerBase
         return Ok(aulas);
     }
 
+    [Authorize(Roles = "Aluno,Instrutor,AutoEscola,Admin")]
     [HttpGet("instrutores")]
     public async Task<IActionResult> ListarInstrutores()
     {

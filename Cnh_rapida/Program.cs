@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Cnh_rapida.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Cnh_rapida.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +60,50 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IAutoEscolaRobustaService, AutoEscolaRobustaService>();
+
+// ✅ JWT Bearer — para aceitar tokens gerados pelo /api/auth/google
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "CNHRapida_SuperSecret_JWT_Key_2024_MinLength32Chars!";
+// ✅ Configuração de Autenticação Híbrida (Identity Bearer + JWT do Google)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "Bearer";
+    options.DefaultAuthenticateScheme = "Bearer";
+    options.DefaultChallengeScheme = "Bearer";
+})
+.AddPolicyScheme("Bearer", "Identity ou JwtBearer", options =>
+{
+    options.ForwardDefaultSelector = context =>
+    {
+        string auth = context.Request.Headers["Authorization"];
+        if (string.IsNullOrEmpty(auth)) return IdentityConstants.BearerScheme;
+
+        // Se o token contiver pontos, assume que é um JWT (Google Login)
+        // Se for um token opaco simples, assume que é do Identity
+        if (auth.StartsWith("Bearer ") && auth.Contains("."))
+        {
+            return "JwtBearer";
+        }
+        return IdentityConstants.BearerScheme;
+    };
+})
+.AddJwtBearer("JwtBearer", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = "cnhrapida",
+        ValidAudience = "cnhrapida",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        RoleClaimType = System.Security.Claims.ClaimTypes.Role // Garantir que mapeia os Roles corretamente
+    };
+});
+
+// ✅ Autorização: Usar a política padrão para exigir autenticação
+builder.Services.AddAuthorization();
 
 // ✅ CORS para React
 builder.Services.AddCors(options =>
@@ -71,6 +119,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// ✅ CORS para React
+app.UseCors("AllowFrontend");
+
+// 🔥 Middleware de Erros Global
+app.UseMiddleware<ExceptionMiddleware>();
+
+// 🔥 Limpar logs de DbContext para evitar spam no console
+var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+var logger = loggerFactory.CreateLogger("DbSeeder");
+
 // 🔥 Semear banco (Síncrono para garantir que os dados existam antes do login)
 try 
 {
@@ -80,6 +138,10 @@ try
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<Usuario>>();
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
+
+        logger.LogInformation("Applying database migrations...");
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully. Seeding data...");
 
         string[] roles = { "Admin", "Aluno", "Instrutor" };
         foreach (var role in roles)
@@ -107,6 +169,31 @@ try
                 ExameMedicoRealizado = false,
                 UltimaAtualizacao = DateTime.UtcNow
             });
+        }
+
+        // Admin
+        var adminEmail = "admin@cnhrapida.com.br";
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
+        {
+            adminUser = new Usuario { UserName = adminEmail, Email = adminEmail, NomeCompleto = "Administrador Sistema", EmailConfirmed = true };
+            var result = await userManager.CreateAsync(adminUser, "Admin@123");
+        }
+
+        if (adminUser != null)
+        {
+            // Garantir que é Admin e remover outros roles se existirem
+            var currentRoles = await userManager.GetRolesAsync(adminUser);
+            if (!currentRoles.Contains("Admin"))
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+            
+            // Se ele tiver outros roles por engano (ex: Instrutor), removemos
+            foreach (var r in currentRoles.Where(r => r != "Admin"))
+            {
+                await userManager.RemoveFromRoleAsync(adminUser, r);
+            }
         }
 
         // Instrutores e Perfis
@@ -140,11 +227,12 @@ try
             }
         }
         await dbContext.SaveChangesAsync();
+        logger.LogInformation("Database seeding completed successfully.");
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine("Erro ao semear banco: " + ex.Message);
+    logger.LogError(ex, "An error occurred while seeding the database. The app will continue starting, but database operations might fail.");
 }
 
 if (app.Environment.IsDevelopment())
@@ -160,16 +248,20 @@ else
 // app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// ✅ Routing
 app.UseRouting();
-
-// ✅ CORS
-app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 // 🔥 Identity Minimal API
 app.MapIdentityApi<Usuario>();
+
+// 🔥 Habilitar Atributos de Rota [ApiController]
+app.MapControllers();
+
+// ✅ Endpoint de saúde para verificar se as mudanças foram aplicadas
+app.MapGet("/api/health", () => Results.Ok(new { status = "Online", version = "1.0.1", timestamp = DateTime.UtcNow }));
 
 // MVC + Areas continuam funcionando
 app.MapAreaControllerRoute(

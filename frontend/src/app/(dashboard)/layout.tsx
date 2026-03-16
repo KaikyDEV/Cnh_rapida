@@ -7,6 +7,8 @@ import Sidebar from '@/components/layout/Sidebar';
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
+
 export default function DashboardLayout({
     children,
 }: {
@@ -20,13 +22,30 @@ export default function DashboardLayout({
             if (!isAuthenticated) {
                 router.push('/login');
             } else if (usuario) {
-                const isInstrutorPath = window.location.pathname.startsWith('/instrutor');
-                const isAlunoPath = window.location.pathname.startsWith('/aluno');
+                const pathname = window.location.pathname;
+                const isInstrutorPath = pathname.startsWith('/instrutor');
+                const isAlunoPath = pathname.startsWith('/aluno');
+                const isDocumentosPath = pathname === '/documentos';
+                const isAdmin = usuario.role === 'Admin';
+
+                // Se o perfil estiver incompleto, força a completar
+                if (usuario.perfilIncompleto) {
+                    router.push('/completar-perfil');
+                    return;
+                }
+
+                // Se não for admin e os documentos não estiverem aprovados, força a página de documentos
+                if (!isAdmin && !usuario.documentosAprovados && !isDocumentosPath) {
+                    router.push('/documentos');
+                    return;
+                }
 
                 if (usuario.role === 'Aluno' && isInstrutorPath) {
                     router.push('/aluno');
-                } else if (usuario.role === 'Instrutor' && (isAlunoPath || window.location.pathname.startsWith('/home'))) {
+                } else if (usuario.role === 'Instrutor' && (isAlunoPath || pathname.startsWith('/home'))) {
                     router.push('/instrutor');
+                } else if (usuario.role === 'AutoEscola' && (isAlunoPath || isInstrutorPath || pathname.startsWith('/home'))) {
+                    router.push('/auto-escola');
                 }
             }
         }
@@ -43,7 +62,8 @@ export default function DashboardLayout({
         );
     }
 
-    if (!isAuthenticated) {
+    // 🛡️ Proteção: Se não autenticado ou perfil incompleto, não renderiza nada (o useEffect cuidará do redirecionamento)
+    if (!isAuthenticated || usuario?.perfilIncompleto) {
         return null;
     }
 
@@ -53,7 +73,9 @@ export default function DashboardLayout({
             <div className="lg:pl-[240px]">
                 <Header />
                 <main className="p-4 lg:p-6 pb-24 lg:pb-6 animate-fade-in">
-                    {children}
+                    <ErrorBoundary>
+                        {children}
+                    </ErrorBoundary>
                 </main>
             </div>
             <BottomNav />

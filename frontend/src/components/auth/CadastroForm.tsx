@@ -35,6 +35,16 @@ function maskCPF(value: string): string {
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
+// Máscara de CNPJ: XX.XXX.XXX/XXXX-XX
+function maskCNPJ(value: string): string {
+    const digits = value.replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+    if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+    if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+}
+
 // Avaliação de força da senha
 function getPasswordStrength(password: string): { level: number; label: string; color: string } {
     let score = 0;
@@ -74,6 +84,9 @@ export default function CadastroForm() {
             estado: '',
             dataNascimento: '',
             cpf: '',
+            nomeFantasia: '',
+            razaoSocial: '',
+            cnpj: '',
             senha: '',
             confirmarSenha: '',
         },
@@ -90,6 +103,11 @@ export default function CadastroForm() {
     const handleCPFChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const masked = maskCPF(e.target.value);
         setValue('cpf', masked, { shouldValidate: true });
+    }, [setValue]);
+
+    const handleCNPJChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const masked = maskCNPJ(e.target.value);
+        setValue('cnpj', masked, { shouldValidate: true });
     }, [setValue]);
 
     const onSubmit = async (data: CadastroFormData) => {
@@ -138,7 +156,7 @@ export default function CadastroForm() {
                 {errors.email && <p className="text-xs text-cnh-error">{errors.email.message}</p>}
             </div>
 
-            {/* Phone + CPF row */}
+            {/* Phone + CPF/CNPJ row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="phoneNumber">Telefone</Label>
@@ -151,20 +169,34 @@ export default function CadastroForm() {
                     />
                     {errors.phoneNumber && <p className="text-xs text-cnh-error">{errors.phoneNumber.message}</p>}
                 </div>
-                <div className="space-y-1.5">
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input
-                        id="cpf"
-                        placeholder="000.000.000-00"
-                        className={`h-11 rounded-lg ${errors.cpf ? 'border-cnh-error' : ''}`}
-                        value={watch('cpf')}
-                        onChange={handleCPFChange}
-                    />
-                    {errors.cpf && <p className="text-xs text-cnh-error">{errors.cpf.message}</p>}
-                </div>
+                {watch('tipoConta') !== 'AutoEscola' ? (
+                    <div className="space-y-1.5">
+                        <Label htmlFor="cpf">CPF</Label>
+                        <Input
+                            id="cpf"
+                            placeholder="000.000.000-00"
+                            className={`h-11 rounded-lg ${errors.cpf ? 'border-cnh-error' : ''}`}
+                            value={watch('cpf')}
+                            onChange={handleCPFChange}
+                        />
+                        {errors.cpf && <p className="text-xs text-cnh-error">{errors.cpf.message}</p>}
+                    </div>
+                ) : (
+                    <div className="space-y-1.5">
+                        <Label htmlFor="cnpj">CNPJ</Label>
+                        <Input
+                            id="cnpj"
+                            placeholder="00.000.000/0000-00"
+                            className={`h-11 rounded-lg ${errors.cnpj ? 'border-cnh-error' : ''}`}
+                            value={watch('cnpj')}
+                            onChange={handleCNPJChange}
+                        />
+                        {errors.cnpj && <p className="text-xs text-cnh-error">{errors.cnpj.message}</p>}
+                    </div>
+                )}
             </div>
 
-            {/* Estado + Data Nascimento */}
+            {/* Estado + Data Nascimento / Razão Social */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="estado">Estado</Label>
@@ -184,43 +216,74 @@ export default function CadastroForm() {
                     </Select>
                     {errors.estado && <p className="text-xs text-cnh-error">{errors.estado.message}</p>}
                 </div>
-                <div className="space-y-1.5">
-                    <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-                    <Input
-                        id="dataNascimento"
-                        type="date"
-                        className={`h-11 rounded-lg ${errors.dataNascimento ? 'border-cnh-error' : ''}`}
-                        {...register('dataNascimento')}
-                    />
-                    {errors.dataNascimento && <p className="text-xs text-cnh-error">{errors.dataNascimento.message}</p>}
-                </div>
+                
+                {watch('tipoConta') !== 'AutoEscola' ? (
+                    <div className="space-y-1.5">
+                        <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                        <Input
+                            id="dataNascimento"
+                            type="date"
+                            className={`h-11 rounded-lg ${errors.dataNascimento ? 'border-cnh-error' : ''}`}
+                            {...register('dataNascimento')}
+                        />
+                        {errors.dataNascimento && <p className="text-xs text-cnh-error">{errors.dataNascimento.message}</p>}
+                    </div>
+                ) : (
+                    <div className="space-y-1.5">
+                        <Label htmlFor="razaoSocial">Razão Social</Label>
+                        <Input
+                            id="razaoSocial"
+                            placeholder="Nome da empresa"
+                            className={`h-11 rounded-lg ${errors.razaoSocial ? 'border-cnh-error' : ''}`}
+                            {...register('razaoSocial')}
+                        />
+                        {errors.razaoSocial && <p className="text-xs text-cnh-error">{errors.razaoSocial.message}</p>}
+                    </div>
+                )}
             </div>
+
+            {/* Nome Fantasia (Só para Auto Escola) */}
+            {watch('tipoConta') === 'AutoEscola' && (
+                <div className="space-y-1.5">
+                    <Label htmlFor="nomeFantasia">Nome Fantasia</Label>
+                    <Input
+                        id="nomeFantasia"
+                        placeholder="Nome como sua Auto Escola é conhecida"
+                        className={`h-11 rounded-lg ${errors.nomeFantasia ? 'border-cnh-error' : ''}`}
+                        {...register('nomeFantasia')}
+                    />
+                    {errors.nomeFantasia && <p className="text-xs text-cnh-error">{errors.nomeFantasia.message}</p>}
+                </div>
+            )}
 
             {/* Tipo de Conta — Radio Cards */}
             <div className="space-y-1.5">
                 <Label>Tipo de Conta</Label>
-                <div className="grid grid-cols-2 gap-3">
-                    {(['Aluno', 'Instrutor'] as const).map((tipo) => {
+                <div className="grid grid-cols-3 gap-3">
+                    {(['Aluno', 'Instrutor', 'AutoEscola'] as const).map((tipo) => {
                         const isSelected = watch('tipoConta') === tipo;
+                        const icon = tipo === 'Aluno' ? '🎓' : tipo === 'Instrutor' ? '🚗' : '🏢';
+                        const label = tipo === 'AutoEscola' ? 'Auto Escola' : tipo;
+                        
                         return (
                             <button
                                 key={tipo}
                                 type="button"
                                 onClick={() => {
                                     setValue('tipoConta', tipo, { shouldValidate: true });
-                                    trigger('tipoConta');
+                                    trigger(['tipoConta', 'cpf', 'cnpj', 'dataNascimento', 'razaoSocial', 'nomeFantasia']);
                                 }}
                                 className={`
-                  p-4 rounded-xl border-2 text-center transition-all duration-150
+                  p-3 rounded-xl border-2 text-center transition-all duration-150 flex flex-col items-center justify-center
                   ${isSelected
                                         ? 'border-cnh-primary bg-cnh-primary/5 shadow-sm'
                                         : 'border-cnh-border hover:border-cnh-primary/40'
                                     }
                 `}
                             >
-                                <span className="text-2xl block mb-1">{tipo === 'Aluno' ? '🎓' : '🚗'}</span>
-                                <span className={`text-sm font-semibold ${isSelected ? 'text-cnh-primary' : 'text-cnh-text-primary'}`}>
-                                    {tipo}
+                                <span className="text-xl block mb-1">{icon}</span>
+                                <span className={`text-[10px] font-semibold leading-tight ${isSelected ? 'text-cnh-primary' : 'text-cnh-text-primary'}`}>
+                                    {label}
                                 </span>
                             </button>
                         );

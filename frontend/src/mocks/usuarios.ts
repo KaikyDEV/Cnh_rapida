@@ -11,6 +11,8 @@ export const mockUsuarios: Usuario[] = [
         cpf: "123.456.789-00",
         dataCriacao: "2024-08-15T10:30:00",
         role: "Aluno",
+        documentosAprovados: true,
+        perfilIncompleto: false,
         nomeOuEmail: "Carlos Eduardo Silva"
     },
     {
@@ -23,6 +25,8 @@ export const mockUsuarios: Usuario[] = [
         cpf: "987.654.321-00",
         dataCriacao: "2023-01-10T08:00:00",
         role: "Instrutor",
+        documentosAprovados: true,
+        perfilIncompleto: false,
         nomeOuEmail: "Carlos Silva"
     },
     {
@@ -35,6 +39,9 @@ export const mockUsuarios: Usuario[] = [
         cpf: "456.789.123-00",
         dataCriacao: "2023-03-20T09:00:00",
         role: "Instrutor",
+        documentosAprovados: true,
+        perfilIncompleto: false,
         nomeOuEmail: "Ana Paula"
     }
 ];
+

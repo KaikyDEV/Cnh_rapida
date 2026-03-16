@@ -3,10 +3,21 @@ import { alunoApi, instrutorApi } from './api';
 
 // Interface para itens da agenda do instrutor
 export interface AgendaItem {
+    id: number;
     horario: string;
     nomeAluno: string;
     status: 'Agendada' | 'Concluída' | 'Cancelada';
     tipoAula: string;
+}
+
+export interface AulaHistoricoItem {
+    id: number;
+    data: string;
+    nomeAluno: string;
+    status: 'Agendada' | 'Concluída' | 'Cancelada';
+    tipoAula: string;
+    horario: string;
+    dataFormatada: string;
 }
 
 export const instrutorService = {
@@ -16,7 +27,7 @@ export const instrutorService = {
      * GET /api/aluno/instrutores
      */
     async buscarInstrutores(): Promise<InstrutorDisplay[]> {
-        const response = await alunoApi.get<InstrutorDisplay[]>('/instrutores');
+        const response = await alunoApi.get<InstrutorDisplay[]>('/api/aluno/instrutores');
         return response.data;
     },
 
@@ -25,8 +36,35 @@ export const instrutorService = {
      * GET /api/instrutor/agenda?instrutorId=X&data=Y
      */
     async buscarAgenda(instrutorId: string, data: string): Promise<AgendaItem[]> {
-        const response = await instrutorApi.get<AgendaItem[]>('/agenda', {
+        const response = await instrutorApi.get<AgendaItem[]>('/api/instrutor/agenda', {
             params: { instrutorId, data },
+        });
+        return response.data;
+    },
+
+    /**
+     * Marca uma aula como concluída
+     * POST /api/instrutor/concluir-aula/{id}
+     */
+    async concluirAula(aulaId: number): Promise<void> {
+        await instrutorApi.post(`/api/instrutor/concluir-aula/${aulaId}`);
+    },
+
+    /**
+     * Cancela uma aula agendada
+     * POST /api/instrutor/cancelar-aula/{id}
+     */
+    async cancelarAula(aulaId: number): Promise<void> {
+        await instrutorApi.post(`/api/instrutor/cancelar-aula/${aulaId}`);
+    },
+
+    /**
+     * Busca todas as aulas do instrutor
+     * GET /api/instrutor/todas-aulas?instrutorId=X
+     */
+    async buscarTodasAulas(instrutorId: string): Promise<AulaHistoricoItem[]> {
+        const response = await instrutorApi.get<AulaHistoricoItem[]>('/api/instrutor/todas-aulas', {
+            params: { instrutorId }
         });
         return response.data;
     },
@@ -42,7 +80,7 @@ export const instrutorService = {
         horaFim: string,
         motivo?: string
     ): Promise<void> {
-        await instrutorApi.post('/bloquear-horario', {
+        await instrutorApi.post('/api/instrutor/bloquear-horario', {
             instrutorId,
             data,
             horaInicio,
@@ -59,7 +97,7 @@ export const instrutorService = {
         instrutorId: string,
         data: string
     ): Promise<string[]> {
-        const response = await alunoApi.get<string[]>('/instrutor/horarios-disponiveis', {
+        const response = await alunoApi.get<string[]>('/api/aluno/instrutor/horarios-disponiveis', {
             params: { instrutorId, data },
         });
         return response.data;
