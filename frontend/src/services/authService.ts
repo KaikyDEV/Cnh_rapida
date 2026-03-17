@@ -65,7 +65,7 @@ export const authService = {
      * POST /api/auth/register
      */
     async cadastro(data: CadastroFormData): Promise<{ usuario: Usuario; token: string }> {
-        // Enviar todos os campos para o novo endpoint de registro
+        // Enviar todos os campos para o novo endpoint de registro, limpando formatação
         await authApi.post('/api/auth/register', {
             email: data.email,
             senha: data.senha,
@@ -74,7 +74,10 @@ export const authService = {
             tipoConta: data.tipoConta,
             estado: data.estado,
             dataNascimento: data.dataNascimento,
-            cpf: data.cpf
+            cpf: data.cpf?.replace(/\D/g, ''),
+            cnpj: data.cnpj?.replace(/\D/g, ''),
+            nomeFantasia: data.nomeFantasia,
+            razaoSocial: data.razaoSocial
         });
 
         // Após registrar, faz login para obter o token
