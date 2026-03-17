@@ -25,10 +25,10 @@ interface IdentityInfoResponse {
 export const authService = {
     /**
      * Login com email e senha
-     * POST /login
+     * POST /api/login
      */
     async login(data: LoginFormData): Promise<{ usuario: Usuario; token: string }> {
-        const response = await authApi.post<IdentityLoginResponse>('/login', {
+        const response = await authApi.post<IdentityLoginResponse>('/api/login', {
             email: data.email,
             password: data.senha,
         });

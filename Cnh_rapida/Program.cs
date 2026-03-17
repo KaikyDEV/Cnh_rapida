@@ -256,7 +256,7 @@ app.UseRouting();
 
 
 // 🔥 Identity Minimal API
-app.MapIdentityApi<Usuario>();
+app.MapGroup("/api").MapIdentityApi<Usuario>();
 
 // 🔥 Habilitar Atributos de Rota [ApiController]
 app.MapControllers();
