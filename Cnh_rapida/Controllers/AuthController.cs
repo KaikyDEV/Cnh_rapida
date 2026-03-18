@@ -23,18 +23,22 @@ public class AuthController : ControllerBase
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
 
+    private readonly ILogger<AuthController> _logger;
+
     public AuthController(
         UserManager<Usuario> userManager,
         SignInManager<Usuario> signInManager,
         ApplicationDbContext context,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _context = context;
         _roleManager = roleManager;
         _configuration = configuration;
+        _logger = logger;
     }
 
     private string GenerateJwtToken(Usuario user, string role)
@@ -149,19 +153,37 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
+        var requestId = Guid.NewGuid().ToString().Substring(0, 8);
+        _logger.LogInformation("[{Id}] Starting Me endpoint", requestId);
+        
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByIdAsync(userId!);
+            _logger.LogInformation("[{Id}] UserId from claims: {UserId}", requestId, userId);
 
-            if (user == null) return NotFound();
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("[{Id}] No UserId found in claims", requestId);
+                return Unauthorized(new { message = "Token inválido ou expirado" });
+            }
 
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("[{Id}] User not found in database for ID: {UserId}", requestId, userId);
+                return NotFound(new { message = "Usuário não encontrado" });
+            }
+
+            _logger.LogInformation("[{Id}] User found: {Email}. Fetching roles...", requestId, user.Email);
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.Contains("Admin") ? "Admin" : (roles.FirstOrDefault() ?? "Aluno");
+            _logger.LogInformation("[{Id}] User role: {Role}", requestId, role);
 
             // Buscar flags de aprovação e IDs específicos
             bool documentosAprovados = false;
             int? perfilId = null;
+
+            _logger.LogInformation("[{Id}] Fetching profile data for role: {Role}", requestId, role);
 
             if (role == "Aluno")
             {
@@ -203,6 +225,8 @@ public class AuthController : ControllerBase
                 }
             }
 
+            _logger.LogInformation("[{Id}] Profile data fetched. Preparing response.", requestId);
+
             return Ok(new
             {
                 user.Id,
@@ -220,7 +244,12 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Erro de conexão com o banco de dados", details = ex.Message });
+            _logger.LogError(ex, "[{Id}] Exception in Me endpoint: {Message}", requestId, ex.Message);
+            return StatusCode(500, new { 
+                message = "Erro interno ao processar informações do perfil", 
+                details = ex.Message,
+                requestId = requestId
+            });
         }
     }
 
