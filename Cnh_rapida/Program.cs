@@ -119,13 +119,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// 🔥 Middleware de Erros Global (DEVE SER O PRIMEIRO)
+app.UseMiddleware<ExceptionMiddleware>();
+
 // ✅ CORS para React
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-
-// 🔥 Middleware de Erros Global
-app.UseMiddleware<ExceptionMiddleware>();
 
 // 🔥 Limpar logs de DbContext para evitar spam no console
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
