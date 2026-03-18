@@ -44,8 +44,12 @@ export default function LoginForm() {
             else if (result.usuario.role === 'Instrutor') router.push('/instrutor');
             else if (result.usuario.role === 'AutoEscola') router.push('/auto-escola');
             else router.push('/home');
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+        } catch (err: any) {
+            if (err.response?.status === 401) {
+                setError('E-mail ou senha incorretos. Por favor, tente novamente.');
+            } else {
+                setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+            }
         } finally {
             setIsSubmitting(false);
         }
