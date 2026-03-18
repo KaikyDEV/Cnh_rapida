@@ -119,10 +119,20 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 🔥 Middleware de Erros Global (DEVE SER O PRIMEIRO)
+// 1. Exception Handling (Deve ser o primeiro)
 app.UseMiddleware<ExceptionMiddleware>();
 
-// ✅ CORS para React
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+// 2. Static Files & Routing
+app.UseStaticFiles();
+app.UseRouting();
+
+// 3. Security & Policy
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -232,28 +242,11 @@ try
         logger.LogInformation("Database seeding completed successfully.");
     }
 }
-    catch (Exception ex)
-    {
-        var errorMessage = ex.InnerException != null ? $"{ex.Message} | Inner: {ex.InnerException.Message}" : ex.Message;
-        logger.LogError(ex, $"An error occurred while seeding the database: {errorMessage}");
-        // We don't rethrow here to allow the app to start, but the logs will now be much clearer
-    }
-
-if (app.Environment.IsDevelopment())
+catch (Exception ex)
 {
-    app.UseMigrationsEndPoint();
+    var errorMessage = ex.InnerException != null ? $"{ex.Message} | Inner: {ex.InnerException.Message}" : ex.Message;
+    logger.LogError(ex, $"An error occurred while seeding the database: {errorMessage}");
 }
-else
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-// app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-// ✅ Routing
-app.UseRouting();
 
 
 
