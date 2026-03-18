@@ -232,10 +232,12 @@ try
         logger.LogInformation("Database seeding completed successfully.");
     }
 }
-catch (Exception ex)
-{
-    logger.LogError(ex, "An error occurred while seeding the database. The app will continue starting, but database operations might fail.");
-}
+    catch (Exception ex)
+    {
+        var errorMessage = ex.InnerException != null ? $"{ex.Message} | Inner: {ex.InnerException.Message}" : ex.Message;
+        logger.LogError(ex, $"An error occurred while seeding the database: {errorMessage}");
+        // We don't rethrow here to allow the app to start, but the logs will now be much clearer
+    }
 
 if (app.Environment.IsDevelopment())
 {
@@ -262,7 +264,29 @@ app.MapGroup("/api").MapIdentityApi<Usuario>();
 app.MapControllers();
 
 // ✅ Endpoint de saúde para verificar se as mudanças foram aplicadas
-app.MapGet("/api/health", () => Results.Ok(new { status = "Online", version = "1.0.1", timestamp = DateTime.UtcNow }));
+app.MapGet("/api/health", async (ApplicationDbContext db) => 
+{
+    var dbCanConnect = false;
+    string dbError = null;
+    try 
+    {
+        dbCanConnect = await db.Database.CanConnectAsync();
+    }
+    catch (Exception ex)
+    {
+        dbError = ex.Message;
+    }
+
+    return Results.Ok(new { 
+        status = "Online", 
+        version = "1.0.2", 
+        timestamp = DateTime.UtcNow,
+        database = new {
+            connected = dbCanConnect,
+            error = dbError
+        }
+    });
+});
 
 // MVC + Areas continuam funcionando
 app.MapAreaControllerRoute(

@@ -149,72 +149,79 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var user = await _userManager.FindByIdAsync(userId!);
-
-        if (user == null) return NotFound();
-
-        var roles = await _userManager.GetRolesAsync(user);
-        var role = roles.Contains("Admin") ? "Admin" : (roles.FirstOrDefault() ?? "Aluno");
-
-        // Buscar flags de aprovação e IDs específicos
-        bool documentosAprovados = false;
-        int? perfilId = null;
-
-        if (role == "Aluno")
+        try
         {
-            var status = await _context.AlunoCnhStatus
-                .Where(s => s.UsuarioId == userId)
-                .Select(s => new { s.Id, s.DocumentosAprovados })
-                .FirstOrDefaultAsync();
-            
-            if (status != null)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId!);
+
+            if (user == null) return NotFound();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.Contains("Admin") ? "Admin" : (roles.FirstOrDefault() ?? "Aluno");
+
+            // Buscar flags de aprovação e IDs específicos
+            bool documentosAprovados = false;
+            int? perfilId = null;
+
+            if (role == "Aluno")
             {
-                documentosAprovados = status.DocumentosAprovados;
-                perfilId = status.Id;
+                var status = await _context.AlunoCnhStatus
+                    .Where(s => s.UsuarioId == userId)
+                    .Select(s => new { s.Id, s.DocumentosAprovados })
+                    .FirstOrDefaultAsync();
+                
+                if (status != null)
+                {
+                    documentosAprovados = status.DocumentosAprovados;
+                    perfilId = status.Id;
+                }
             }
-        }
-        else if (role == "Instrutor")
-        {
-            var perfil = await _context.PerfisInstrutor
-                .Where(p => p.UsuarioId == userId)
-                .Select(p => new { p.Id, p.DocumentosAprovados })
-                .FirstOrDefaultAsync();
-
-            if (perfil != null)
+            else if (role == "Instrutor")
             {
-                documentosAprovados = perfil.DocumentosAprovados;
-                perfilId = perfil.Id;
-            }
-        }
-        else if (role == "AutoEscola")
-        {
-            var ae = await _context.AutoEscolas
-                .Where(a => a.UsuarioId == userId)
-                .Select(a => new { a.Id, a.DocumentosAprovados })
-                .FirstOrDefaultAsync();
+                var perfil = await _context.PerfisInstrutor
+                    .Where(p => p.UsuarioId == userId)
+                    .Select(p => new { p.Id, p.DocumentosAprovados })
+                    .FirstOrDefaultAsync();
 
-            if (ae != null)
+                if (perfil != null)
+                {
+                    documentosAprovados = perfil.DocumentosAprovados;
+                    perfilId = perfil.Id;
+                }
+            }
+            else if (role == "AutoEscola")
             {
-                documentosAprovados = ae.DocumentosAprovados;
-                perfilId = ae.Id;
-            }
-        }
+                var ae = await _context.AutoEscolas
+                    .Where(a => a.UsuarioId == userId)
+                    .Select(a => new { a.Id, a.DocumentosAprovados })
+                    .FirstOrDefaultAsync();
 
-        return Ok(new
+                if (ae != null)
+                {
+                    documentosAprovados = ae.DocumentosAprovados;
+                    perfilId = ae.Id;
+                }
+            }
+
+            return Ok(new
+            {
+                user.Id,
+                user.NomeCompleto,
+                user.Email,
+                role,
+                user.CPF,
+                user.DataNascimento,
+                user.Estado,
+                documentosAprovados = documentosAprovados,
+                perfilIncompleto = role == "Admin" ? false : (string.IsNullOrEmpty(user.CPF) || !user.DataNascimento.HasValue),
+                perfilId = perfilId,
+                autoEscolaId = user.AutoEscolaId
+            });
+        }
+        catch (Exception ex)
         {
-            user.Id,
-            user.NomeCompleto,
-            user.Email,
-            role,
-            user.CPF,
-            user.DataNascimento,
-            user.Estado,
-            documentosAprovados = documentosAprovados,
-            perfilIncompleto = role == "Admin" ? false : (string.IsNullOrEmpty(user.CPF) || !user.DataNascimento.HasValue),
-            perfilId = perfilId,
-            autoEscolaId = user.AutoEscolaId
-        });
+            return StatusCode(500, new { message = "Erro de conexão com o banco de dados", details = ex.Message });
+        }
     }
 
     [HttpPost("google")]
