@@ -124,8 +124,12 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    // Apenas usar o handler de HTML para rotas que NÃO são da API
+    app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+    {
+        appBuilder.UseExceptionHandler("/Home/Error");
+        appBuilder.UseHsts();
+    });
 }
 
 // 2. Static Files & Routing
