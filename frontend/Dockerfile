@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Frontend build needs the environment variables
-ENV NEXT_PUBLIC_API_URL=http://72.62.15.46.nip.io
+ENV NEXT_PUBLIC_API_URL=https://cnhrapido.tech
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=574405519013-iqqcrf5kia3rgaj0cr47t6kth15hogsi.apps.googleusercontent.com
 RUN npm run build
 
