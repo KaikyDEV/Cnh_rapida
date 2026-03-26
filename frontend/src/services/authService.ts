@@ -131,4 +131,19 @@ export const authService = {
 
         return { usuario, token, perfilIncompleto: userData.perfilIncompleto };
     },
+
+    /**
+     * Esqueci a senha - Solicitar token
+     */
+    async forgotPassword(email: string): Promise<void> {
+        await authApi.post('/api/auth/forgot-password', { email });
+    },
+
+    /**
+     * Redefinir senha - Enviar nova senha com token
+     */
+    async resetPassword(data: { email: string; token: string; novaSenha: string }): Promise<void> {
+        await authApi.post('/api/auth/reset-password', data);
+    },
 };
+

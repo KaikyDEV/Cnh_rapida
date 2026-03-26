@@ -126,7 +126,7 @@ export default function LoginForm() {
                         Lembrar de mim
                     </Label>
                 </div>
-                <Link href="#" className="text-sm text-cnh-primary hover:text-cnh-primary-dark transition-colors font-medium">
+                <Link href="/esqueci-senha" className="text-sm text-cnh-primary hover:text-cnh-primary-dark transition-colors font-medium">
                     Esqueceu a senha?
                 </Link>
             </div>

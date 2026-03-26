@@ -22,7 +22,7 @@ public class AuthController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-
+    private readonly Microsoft.AspNetCore.Identity.UI.Services.IEmailSender _emailSender;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -31,6 +31,7 @@ public class AuthController : ControllerBase
         ApplicationDbContext context,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
+        Microsoft.AspNetCore.Identity.UI.Services.IEmailSender emailSender,
         ILogger<AuthController> logger)
     {
         _userManager = userManager;
@@ -38,6 +39,7 @@ public class AuthController : ControllerBase
         _context = context;
         _roleManager = roleManager;
         _configuration = configuration;
+        _emailSender = emailSender;
         _logger = logger;
     }
 
@@ -386,6 +388,53 @@ public class AuthController : ControllerBase
             token = newToken, 
             role = dto.TipoConta 
         });
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user == null)
+        {
+            // Por segurança, não revelamos se o usuário existe ou não
+            return Ok(new { message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        
+        // Em produção, você deve usar a URL do seu frontend
+        var frontendUrl = _configuration["FrontendUrl"] ?? "https://cnhrapido.tech";
+        var resetLink = $"{frontendUrl}/redefinir-senha?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email!)}";
+
+        await _emailSender.SendEmailAsync(user.Email!, "Recuperação de Senha - CNH Rápida",
+            $"<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>" +
+            $"<h2 style='color: #003366;'>Recuperação de Senha</h2>" +
+            $"<p>Olá, <strong>{user.NomeCompleto}</strong>!</p>" +
+            $"<p>Recebemos uma solicitação para redefinir sua senha no sistema CNH Rápida.</p>" +
+            $"<p>Para prosseguir, clique no botão abaixo:</p>" +
+            $"<div style='text-align: center; margin: 30px 0;'>" +
+            $"<a href='{resetLink}' style='background-color: #003366; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Redefinir Minha Senha</a>" +
+            $"</div>" +
+            $"<p>Se você não solicitou isso, pode descartar este e-mail com segurança.</p>" +
+            $"<p style='font-size: 12px; color: #777; margin-top: 40px;'>Atenciosamente,<br>Equipe CNH Rápida</p>" +
+            $"</div>");
+
+        return Ok(new { message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+    {
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user == null) return BadRequest(new { message = "Erro ao redefinir senha." });
+
+        var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NovaSenha);
+        if (result.Succeeded)
+        {
+            return Ok(new { message = "Senha redefinida com sucesso!" });
+        }
+
+        return BadRequest(new { errors = result.Errors });
     }
 }
 
