@@ -110,7 +110,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://72.62.15.46.nip.io", "http://72.62.15.46")
+        policy.WithOrigins(
+                    "http://localhost:3000",
+                    "https://cnhrapido.tech",
+                    "https://www.cnhrapido.tech",
+                    "http://72.62.15.46.nip.io",
+                    "http://72.62.15.46"
+                )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
