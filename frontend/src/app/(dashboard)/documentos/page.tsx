@@ -111,7 +111,7 @@ export default function DocumentosPage() {
                                 Você precisa ter uma conta criada no portal do Governo Federal antes de enviar os documentos abaixo.
                             </p>
                             <a
-                                href="https://acesso.gov.br"
+                                href="https://www.detran.sp.gov.br/detransp/pb/servico/habilitacao/_iniciar_processo_primeira_habilitacao?id=carta_de_servico_iniciar_processo_primeira_habilitacao"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-semibold mt-2 hover:underline"
