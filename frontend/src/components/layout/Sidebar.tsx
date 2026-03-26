@@ -26,6 +26,14 @@ export default function Sidebar() {
 
     const filteredLinks = links.filter(link => {
         if (!usuario?.role) return false;
+
+        // Se o Aluno não tem os documentos aprovados, não mostra links de agendamento e painel
+        if (usuario.role === 'Aluno' && !usuario.documentosAprovados) {
+            if (link.href === '/aluno' || link.href === '/agendamento') {
+                return false;
+            }
+        }
+
         return link.roles.includes(usuario.role);
     });
 

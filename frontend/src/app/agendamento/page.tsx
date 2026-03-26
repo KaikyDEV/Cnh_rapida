@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { agendamentoService } from '@/services/agendamentoService';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 import { TipoAula } from '@/types';
 
 const steps = ['Tipo de Aula', 'Instrutor', 'Data', 'Horário', 'Confirmação'];
@@ -38,6 +39,24 @@ function BookingWizardContent() {
         data: null,
         horario: null,
     });
+
+    const { usuario, isLoading } = useAuth();
+
+    // Proteção de Rota - Aluno sem documentosAprovados volta pros documentos
+    if (!isLoading && usuario?.role === 'Aluno' && !usuario?.documentosAprovados) {
+        if (typeof window !== 'undefined') {
+            window.location.href = '/documentos';
+        }
+        return null;
+    }
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-cnh-bg-base">
+                <div className="w-10 h-10 border-3 border-cnh-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     const goNext = () => setCurrentStep(prev => Math.min(prev + 1, 5));
     const goBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));

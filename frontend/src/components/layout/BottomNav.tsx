@@ -21,7 +21,10 @@ export default function BottomNav() {
             <div className="flex items-center justify-around h-16 px-2">
                 {navItems
                     .filter(item => {
-                        if (usuario?.role === 'Aluno' && item.href === '/instrutor') return false;
+                        if (usuario?.role === 'Aluno') {
+                            if (item.href === '/instrutor') return false;
+                            if (item.href === '/aluno' && !usuario.documentosAprovados) return false;
+                        }
                         if (usuario?.role === 'Instrutor' && (item.href === '/aluno' || item.href === '/home')) return false;
                         return true;
                     })
